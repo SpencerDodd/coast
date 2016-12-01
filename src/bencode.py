@@ -49,23 +49,91 @@ Bencodes the given input
 def encode(unencoded_input):
 	pass
 
+
 """
-Returns the decoded result of a bencoded input
+Returns the bdecoded result of a bencoded input
 """
-def decode(bencoded_input):
+def bdecode(bencoded_input):
+
+	# we have reached the end of our input
+	if bencoded_input == "":
+		return bencoded_input
+
+	for index,character in enumerate(bencoded_input):
+
+		if character == "i":
+			return bdecode_int(bencoded_input)
+		
+		elif is_int(character):
+			return bdecode_string(bencoded_input)
+		
+		elif character == "l":
+			next_object_index = 0
+			return_list = []
+			bencoded_list_contents = bencoded_input[1:-1]
+			for idx,char in enumerate(bencoded_list_contents):
+				if idx == next_object_index:
+					if char == "i":
+						end_of_int_index = bencoded_list_contents.find("e") + 1
+						return_list.append(bdecode(bencoded_list_contents[idx:end_of_int_index]))
+						next_object_index = end_of_int_index
+					
+					elif is_int(char):
+						length_of_string = int(bencoded_list_contents[idx:].split(":")[0])
+						next_object_index = idx + length_of_string + 1 + int(bencoded_list_contents[idx:].split(":")[0])
+						string_subsection = bencoded_list_contents[idx:next_object_index]
+						remaining_area = bencoded_list_contents[next_object_index:]
+
+						return_list.append(bdecode(string_subsection))
+					
+					else:
+						return_list.append(bdecode(bencoded_list_contents))
+
+			return return_list
+
+
+
+def bdecode_int(bencoded_int):
+	try:
+		end_of_int_index = bencoded_int.find("e")
+		int_value = int(bencoded_int[1:end_of_int_index])
+		return int_value
 	
-	stack = list(bencoded_input)
-	stack.reverse()
-	objects_in_input = stack.count("e")
+	except Exception:
+		raise ValueError("Bencoded data invalid (integer)")
 
-	for i in range(0, objects_in_input):
-		if stack[i] == "e":
-			current_type = stack[-1]
 
-			# type is integer
-			if current_type == "i":
-				return stack[1]
+def bdecode_string(bencoded_string):
+	# length of string
+	los = int(bencoded_string.split(":")[0])
+	# length of the length of string (decimal places)
+	lolos = len(str(los))
+	# first letter index
+	fli = lolos + 1 # for ':' char
+	# last letter index
+	lli = lolos + los + 1 # for ':' char
+	unenc_string = bencoded_string[fli:lli]
+	# what is left in our string
+	leftover = bencoded_string[lli:]
+	# check if our unencoded string has more values than indicated by the
+	#	los field, or if there are not enough values in the string as the
+	#	amount allocated by the los field
+	if leftover != "" or los != len(unenc_string):
+		error_string = "Bencoded data invalid (string)"
+		raise ValueError(error_string)
+	
+	else:
+		return unenc_string
 
+"""
+Returns true if input string is a string representation of an int
+"""
+def is_int(string_input):
+	try:
+		int(string_input)
+		return True
+	except ValueError:
+		return False
 		
 
 """
@@ -73,11 +141,35 @@ Unit tests
 """
 class TestBencode(unittest.TestCase):
 
-		def test_int(self):
-			self.assertEqual("1", decode("i1e"))
+	def test_is_int(self):
+		self.assertEqual(True, is_int("1"))
+		self.assertEqual(True, is_int("-1"))
 
+	def test_int(self):
+		self.assertEqual(1, bdecode("i1e"))
+		self.assertEqual(-1, bdecode("i-1e"))
+		self.assertEqual(100, bdecode("i100e"))
+		
+		# Error raising
+		with self.assertRaises(ValueError) as context:
+			bdecode("i10ae")
+		self.assertTrue("Bencoded data invalid (integer)" in context.exception)
 
+	def test_string(self):
+		self.assertEqual("test", bdecode("4:test"))
+		self.assertEqual("holy guacamole", bdecode("14:holy guacamole"))
+		with self.assertRaises(ValueError) as context:
+			bdecode("3:test")
+		self.assertTrue("Bencoded data invalid (string)" in context.exception)
+		with self.assertRaises(ValueError) as context:
+			bdecode("5:test")
+		self.assertTrue("Bencoded data invalid (string)" in context.exception)
 
+	def test_list(self):
+		self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
+		self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:b"))
+		#self.assertEqual()
+	
 if __name__ == "__main__":
 	unittest.main()
 
