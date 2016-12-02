@@ -1,4 +1,7 @@
+import os
+import logging
 import unittest
+from auxillarymethods import one_directory_back
 
 """
 This method recursively bencodes a given value or string of values, and returns 
@@ -43,6 +46,17 @@ Protocol Specification - http://bittorrent.org/beps/bep_0003.html):
 
 """
 
+# Initialize logging
+logger = logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+root_dir = one_directory_back(os.getcwd())
+log_dir = os.path.join(root_dir, "logs")
+handler = logging.FileHandler(os.path.join(log_dir, "log.txt"))
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 """
 Bencodes the given input
 """
@@ -54,6 +68,8 @@ def encode(unencoded_input):
 Returns the bdecoded result of a bencoded input
 """
 def bdecode(bencoded_input):
+
+	logger.info("Decoding input: {}".format(bencoded_input))
 
 	# we have reached the end of our input
 	if bencoded_input == "":
@@ -68,23 +84,29 @@ def bdecode(bencoded_input):
 			return bdecode_string(bencoded_input)
 		
 		elif character == "l":
+			logger.debug("Decoding list: {}".format(bencoded_input))
 			next_object_index = 0
 			return_list = []
 			bencoded_list_contents = bencoded_input[1:-1]
 			for idx,char in enumerate(bencoded_list_contents):
+				remaining_list_contents = bencoded_list_contents[idx:]
+				logger.debug("Iteration ({}): Current_char ({}) | next_object ({}) | remaining_list ({})".format(idx, char, next_object_index, remaining_list_contents))
 				if idx == next_object_index:
 					if char == "i":
-						end_of_int_index = bencoded_list_contents.find("e") + 1
-						return_list.append(bdecode(bencoded_list_contents[idx:end_of_int_index]))
+						end_of_int_index = remaining_list_contents.find("e") + 1 + idx
 						next_object_index = end_of_int_index
+						return_list.append(bdecode(bencoded_list_contents[idx:end_of_int_index]))
+						
+						logger.debug("Decoding int: end_of_int_index ({}) | next_object_index ({})".format(end_of_int_index, next_object_index))
 					
 					elif is_int(char):
 						length_of_string = int(bencoded_list_contents[idx:].split(":")[0])
 						next_object_index = idx + length_of_string + 1 + int(bencoded_list_contents[idx:].split(":")[0])
 						string_subsection = bencoded_list_contents[idx:next_object_index]
 						remaining_area = bencoded_list_contents[next_object_index:]
-
 						return_list.append(bdecode(string_subsection))
+
+						logger.debug("Decoding string: length_of_string ({}) | next_object_index ({}) | string_subsection ({}) | remaining_area ({})".format(length_of_string, next_object_index, string_subsection, remaining_area))
 					
 					else:
 						return_list.append(bdecode(bencoded_list_contents))
@@ -167,7 +189,7 @@ class TestBencode(unittest.TestCase):
 
 	def test_list(self):
 		self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
-		self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:b"))
+		self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:be"))
 		#self.assertEqual()
 	
 if __name__ == "__main__":

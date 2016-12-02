@@ -1,0 +1,526 @@
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: 
+2016-12-02 13:31:26,139 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:31:26,140 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:31:26,140 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:31:26,140 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:32:59,119 - __main__ - INFO - Iteration (0)
+2016-12-02 13:32:59,119 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:32:59,119 - __main__ - INFO - Iteration (1)
+2016-12-02 13:32:59,119 - __main__ - INFO - Iteration (2)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (3)
+2016-12-02 13:32:59,120 - __main__ - INFO - Decoding input: 
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (4)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (5)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (6)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (7)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (8)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (9)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (10)
+2016-12-02 13:32:59,120 - __main__ - INFO - Iteration (11)
+2016-12-02 13:32:59,120 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:32:59,121 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:32:59,121 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:32:59,121 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:34:49,076 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:34:49,076 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:34:49,076 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:34:49,076 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:34:49,076 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:34:49,076 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0)
+2016-12-02 13:34:49,077 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Decoding input: 
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (3)
+2016-12-02 13:34:49,077 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (3)
+2016-12-02 13:34:49,078 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:34:49,078 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:34:49,078 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:34:49,078 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:35:56,339 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:35:56,339 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:35:56,339 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:35:56,340 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:35:56,340 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:35:56,340 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0)
+2016-12-02 13:35:56,340 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Decoding input: 
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (3)
+2016-12-02 13:35:56,340 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (3)
+2016-12-02 13:35:56,341 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (3)
+2016-12-02 13:35:56,341 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (3)
+2016-12-02 13:35:56,341 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (3)
+2016-12-02 13:35:56,341 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:35:56,341 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:35:56,341 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:35:56,341 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:35:58,667 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:35:58,667 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:35:58,667 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:35:58,667 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:35:58,668 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:35:58,668 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0)
+2016-12-02 13:35:58,668 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Decoding input: 
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (3)
+2016-12-02 13:35:58,668 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (3)
+2016-12-02 13:35:58,669 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:35:58,669 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:35:58,669 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:35:58,669 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:36:58,340 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:36:58,340 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:36:58,340 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:36:58,340 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:36:58,341 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:36:58,341 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0)
+2016-12-02 13:36:58,341 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:36:58,341 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Decoding input: 
+2016-12-02 13:36:58,341 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (3)
+2016-12-02 13:36:58,341 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (3)
+2016-12-02 13:36:58,342 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (3)
+2016-12-02 13:36:58,342 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (3)
+2016-12-02 13:36:58,342 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (3)
+2016-12-02 13:36:58,342 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:36:58,342 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:36:58,342 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:36:58,342 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:37:56,247 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:37:56,248 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0)
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:37:56,248 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3)
+2016-12-02 13:37:56,248 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3)
+2016-12-02 13:37:56,248 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3)
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding input: 
+2016-12-02 13:37:56,248 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:37:56,248 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (3)
+2016-12-02 13:37:56,249 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:37:56,249 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:37:56,249 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:37:56,250 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:39:40,084 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:39:40,084 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Decoding input: 
+2016-12-02 13:39:40,085 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (3) | remaining_list (2ei3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (3) | remaining_list (ei3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (3) | remaining_list (i3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (3) | remaining_list (3ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (3) | remaining_list (ei4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (3) | remaining_list (i4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (3) | remaining_list (4e)
+2016-12-02 13:39:40,085 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (3) | remaining_list (e)
+2016-12-02 13:39:40,086 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:39:40,086 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:39:40,086 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:39:40,086 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:41:02,116 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding input: i1ei2ei3ei4e
+2016-12-02 13:41:02,116 - __main__ - INFO - Decoding int: end_of_int_index (15) | next_object_index (15)
+2016-12-02 13:41:02,116 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (15) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:41:02,116 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (15) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:41:02,116 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (15) | remaining_list (i2ei3ei4e)
+2016-12-02 13:41:02,116 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (15) | remaining_list (2ei3ei4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (15) | remaining_list (ei3ei4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (15) | remaining_list (i3ei4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (15) | remaining_list (3ei4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (15) | remaining_list (ei4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (15) | remaining_list (i4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (15) | remaining_list (4e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (15) | remaining_list (e)
+2016-12-02 13:41:02,117 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:41:02,117 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:41:02,118 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:41:02,118 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:41:34,393 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:41:34,393 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:41:34,393 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:41:34,393 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:41:34,394 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding input: li1e1:ai2e1:b
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding list: li1e1:ai2e1:b
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1e1:ai2e1:)
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:41:34,395 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1e1:ai2e1:)
+2016-12-02 13:41:34,395 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3) | remaining_list (e1:ai2e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (3): Current_char (1) | next_object (3) | remaining_list (1:ai2e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Decoding input: 1:a
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (4): Current_char (:) | next_object (6) | remaining_list (:ai2e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (5): Current_char (a) | next_object (6) | remaining_list (ai2e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i2e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:41:34,396 - __main__ - INFO - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (7): Current_char (2) | next_object (9) | remaining_list (2e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (9) | remaining_list (e1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Iteration (9): Current_char (1) | next_object (9) | remaining_list (1:)
+2016-12-02 13:41:34,396 - __main__ - INFO - Decoding input: 1:
+2016-12-02 13:41:34,396 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:41:34,397 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:41:34,397 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:41:34,397 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:42:19,347 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:42:19,347 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:42:19,347 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:42:19,347 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:42:19,348 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:42:19,349 - __main__ - INFO - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:42:19,349 - __main__ - INFO - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:42:19,349 - __main__ - INFO - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:42:19,349 - __main__ - INFO - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:42:19,349 - __main__ - INFO - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:42:19,349 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:45:02,901 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:45:02,901 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:45:02,902 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:45:02,902 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:45:02,902 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:45:02,902 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:45:02,902 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:45:02,902 - __main__ - DEBUG - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:45:02,903 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:45:02,903 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:45:02,903 - __main__ - DEBUG - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:45:02,903 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:45:02,903 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:45:02,903 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:45:02,903 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:45:16,114 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:45:16,115 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:45:16,115 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:45:16,115 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:45:16,115 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:45:16,115 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:45:18,100 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:45:18,101 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:45:18,101 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:45:18,101 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:45:18,101 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:45:18,101 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:45:18,101 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:45:18,102 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:45:18,102 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:45:18,102 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:45:18,102 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:45:18,102 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:45:18,102 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:48:09,381 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:48:09,381 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:48:09,381 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:48:09,381 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:48:09,381 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:48:09,381 - __main__ - DEBUG - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:48:09,382 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:48:09,382 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:48:09,382 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:48:09,382 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:48:09,382 - __main__ - DEBUG - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:48:09,382 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:48:09,383 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:48:09,383 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:48:09,383 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:48:21,194 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:48:21,195 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:48:21,195 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:48:21,195 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:48:21,195 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:48:21,195 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:48:21,195 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:48:21,195 - __main__ - DEBUG - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:48:21,196 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:48:21,196 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:48:21,196 - __main__ - INFO - Decoding input: li1e1:ai2e1:b
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Decoding list: li1e1:ai2e1:b
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1e1:ai2e1:)
+2016-12-02 13:48:21,196 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1e1:ai2e1:)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (e1:ai2e1:)
+2016-12-02 13:48:21,196 - __main__ - DEBUG - Iteration (3): Current_char (1) | next_object (3) | remaining_list (1:ai2e1:)
+2016-12-02 13:48:21,197 - __main__ - INFO - Decoding input: 1:a
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Decoding string: length_of_string (1) | next_object_index (6) | string_subsection (1:a) | remaining_area (i2e1:)
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Iteration (4): Current_char (:) | next_object (6) | remaining_list (:ai2e1:)
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Iteration (5): Current_char (a) | next_object (6) | remaining_list (ai2e1:)
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i2e1:)
+2016-12-02 13:48:21,197 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Iteration (7): Current_char (2) | next_object (9) | remaining_list (2e1:)
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (e1:)
+2016-12-02 13:48:21,197 - __main__ - DEBUG - Iteration (9): Current_char (1) | next_object (9) | remaining_list (1:)
+2016-12-02 13:48:21,197 - __main__ - INFO - Decoding input: 1:
+2016-12-02 13:48:21,197 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:48:21,197 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:48:21,198 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:48:21,198 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:49:06,024 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:49:06,024 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:49:06,025 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:49:06,025 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:49:06,025 - __main__ - INFO - Decoding input: li1e1:ai2e1:be
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Decoding list: li1e1:ai2e1:be
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1e1:ai2e1:b)
+2016-12-02 13:49:06,025 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1e1:ai2e1:b)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (e1:ai2e1:b)
+2016-12-02 13:49:06,025 - __main__ - DEBUG - Iteration (3): Current_char (1) | next_object (3) | remaining_list (1:ai2e1:b)
+2016-12-02 13:49:06,025 - __main__ - INFO - Decoding input: 1:a
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Decoding string: length_of_string (1) | next_object_index (6) | string_subsection (1:a) | remaining_area (i2e1:b)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (4): Current_char (:) | next_object (6) | remaining_list (:ai2e1:b)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (5): Current_char (a) | next_object (6) | remaining_list (ai2e1:b)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i2e1:b)
+2016-12-02 13:49:06,026 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (7): Current_char (2) | next_object (9) | remaining_list (2e1:b)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (e1:b)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (9): Current_char (1) | next_object (9) | remaining_list (1:b)
+2016-12-02 13:49:06,026 - __main__ - INFO - Decoding input: 1:b
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Decoding string: length_of_string (1) | next_object_index (12) | string_subsection (1:b) | remaining_area ()
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (10): Current_char (:) | next_object (12) | remaining_list (:b)
+2016-12-02 13:49:06,026 - __main__ - DEBUG - Iteration (11): Current_char (b) | next_object (12) | remaining_list (b)
+2016-12-02 13:49:06,026 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:49:06,026 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:49:06,026 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:49:06,026 - __main__ - INFO - Decoding input: 5:test
+2016-12-02 13:49:09,892 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:49:09,893 - __main__ - INFO - Decoding input: i-1e
+2016-12-02 13:49:09,893 - __main__ - INFO - Decoding input: i100e
+2016-12-02 13:49:09,893 - __main__ - INFO - Decoding input: i10ae
+2016-12-02 13:49:09,893 - __main__ - INFO - Decoding input: li1ei2ei3ei4ee
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Decoding list: li1ei2ei3ei4ee
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1ei2ei3ei4e)
+2016-12-02 13:49:09,893 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1ei2ei3ei4e)
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (ei2ei3ei4e)
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Iteration (3): Current_char (i) | next_object (3) | remaining_list (i2ei3ei4e)
+2016-12-02 13:49:09,893 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:49:09,893 - __main__ - DEBUG - Decoding int: end_of_int_index (6) | next_object_index (6)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (4): Current_char (2) | next_object (6) | remaining_list (2ei3ei4e)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (5): Current_char (e) | next_object (6) | remaining_list (ei3ei4e)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i3ei4e)
+2016-12-02 13:49:09,894 - __main__ - INFO - Decoding input: i3e
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (7): Current_char (3) | next_object (9) | remaining_list (3ei4e)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (ei4e)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (9): Current_char (i) | next_object (9) | remaining_list (i4e)
+2016-12-02 13:49:09,894 - __main__ - INFO - Decoding input: i4e
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Decoding int: end_of_int_index (12) | next_object_index (12)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (10): Current_char (4) | next_object (12) | remaining_list (4e)
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (11): Current_char (e) | next_object (12) | remaining_list (e)
+2016-12-02 13:49:09,894 - __main__ - INFO - Decoding input: li1e1:ai2e1:be
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Decoding list: li1e1:ai2e1:be
+2016-12-02 13:49:09,894 - __main__ - DEBUG - Iteration (0): Current_char (i) | next_object (0) | remaining_list (i1e1:ai2e1:b)
+2016-12-02 13:49:09,895 - __main__ - INFO - Decoding input: i1e
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Decoding int: end_of_int_index (3) | next_object_index (3)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (1): Current_char (1) | next_object (3) | remaining_list (1e1:ai2e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (2): Current_char (e) | next_object (3) | remaining_list (e1:ai2e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (3): Current_char (1) | next_object (3) | remaining_list (1:ai2e1:b)
+2016-12-02 13:49:09,895 - __main__ - INFO - Decoding input: 1:a
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Decoding string: length_of_string (1) | next_object_index (6) | string_subsection (1:a) | remaining_area (i2e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (4): Current_char (:) | next_object (6) | remaining_list (:ai2e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (5): Current_char (a) | next_object (6) | remaining_list (ai2e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (6): Current_char (i) | next_object (6) | remaining_list (i2e1:b)
+2016-12-02 13:49:09,895 - __main__ - INFO - Decoding input: i2e
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Decoding int: end_of_int_index (9) | next_object_index (9)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (7): Current_char (2) | next_object (9) | remaining_list (2e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (8): Current_char (e) | next_object (9) | remaining_list (e1:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (9): Current_char (1) | next_object (9) | remaining_list (1:b)
+2016-12-02 13:49:09,895 - __main__ - INFO - Decoding input: 1:b
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Decoding string: length_of_string (1) | next_object_index (12) | string_subsection (1:b) | remaining_area ()
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (10): Current_char (:) | next_object (12) | remaining_list (:b)
+2016-12-02 13:49:09,895 - __main__ - DEBUG - Iteration (11): Current_char (b) | next_object (12) | remaining_list (b)
+2016-12-02 13:49:09,896 - __main__ - INFO - Decoding input: 4:test
+2016-12-02 13:49:09,896 - __main__ - INFO - Decoding input: 14:holy guacamole
+2016-12-02 13:49:09,896 - __main__ - INFO - Decoding input: 3:test
+2016-12-02 13:49:09,896 - __main__ - INFO - Decoding input: 5:test
