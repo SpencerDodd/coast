@@ -109,7 +109,7 @@ def bdecode(bencoded_input):
 						logger.debug("Decoding string: length_of_string ({}) | next_object_index ({}) | string_subsection ({}) | remaining_area ({})".format(length_of_string, next_object_index, string_subsection, remaining_area))
 					
 					else:
-						return_list.append(bdecode(bencoded_list_contents))
+						return_list.append(bdecode(remaining_list_contents))
 
 			return return_list
 
@@ -190,7 +190,7 @@ class TestBencode(unittest.TestCase):
 	def test_list(self):
 		self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
 		self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:be"))
-		#self.assertEqual()
+		self.assertEqual([1, [2, 3, 4]], bdecode("li1eli2ei3ei4eee"))
 	
 if __name__ == "__main__":
 	unittest.main()
