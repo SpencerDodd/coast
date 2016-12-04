@@ -57,6 +57,9 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+BENCODED_STRING_ERROR_SHORT = "Bencoded data invalid (string) [declared length was too short]"
+BENCODED_STRING_ERROR_GENERAL = "Bencoded data invalid (string) [unencoded length not equal to declared]"
+BENCODED_INT_ERROR_INPUT_VALUE = "Bencoded data invalid (int)"
 """
 Bencodes the given input
 """
@@ -113,6 +116,22 @@ def bdecode(bencoded_input):
 
 			return return_list
 
+		elif character == "d":
+			logger.debug("Decoding dictionary: {}".format(bencoded_input))
+			bencoded_list_contents = bencoded_input[1:-1]
+			return_dict = {}
+
+			logger.debug("Iteration ({}): Current_char ({}) | remaining_dict ({})".format("d", "c", bencoded_list_contents))
+			
+			lok = int(bencoded_list_contents.split(":")[0])
+			lolok = len(str(lok))
+			offset = lolok + 1
+
+			key = bdecode_string(bencoded_list_contents[:lok+offset]) # key is string, int is length
+			return_dict[key] = bdecode(bencoded_list_contents[lok+offset:])
+
+
+			return return_dict
 
 
 def bdecode_int(bencoded_int):
@@ -121,8 +140,9 @@ def bdecode_int(bencoded_int):
 		int_value = int(bencoded_int[1:end_of_int_index])
 		return int_value
 	
-	except Exception:
-		raise ValueError("Bencoded data invalid (integer)")
+	except Exception as e:
+		raise ValueError(BENCODED_INT_ERROR_INPUT_VALUE)
+		print ("bencoded:({})\nendofint:({})\nintvalue:({})".format(end_of_int_index,int_value))
 
 
 def bdecode_string(bencoded_string):
@@ -140,9 +160,10 @@ def bdecode_string(bencoded_string):
 	# check if our unencoded string has more values than indicated by the
 	#	los field, or if there are not enough values in the string as the
 	#	amount allocated by the los field
-	if leftover != "" or los != len(unenc_string):
-		error_string = "Bencoded data invalid (string)"
-		raise ValueError(error_string)
+	if leftover != "":
+		raise ValueError(BENCODED_STRING_ERROR_SHORT)
+	if los != len(unenc_string):
+		raise ValueError(BENCODED_STRING_ERROR_GENERAL)
 	
 	else:
 		return unenc_string
@@ -175,22 +196,26 @@ class TestBencode(unittest.TestCase):
 		# Error raising
 		with self.assertRaises(ValueError) as context:
 			bdecode("i10ae")
-		self.assertTrue("Bencoded data invalid (integer)" in context.exception)
+		self.assertTrue(BENCODED_INT_ERROR_INPUT_VALUE in context.exception)
 
 	def test_string(self):
 		self.assertEqual("test", bdecode("4:test"))
 		self.assertEqual("holy guacamole", bdecode("14:holy guacamole"))
 		with self.assertRaises(ValueError) as context:
 			bdecode("3:test")
-		self.assertTrue("Bencoded data invalid (string)" in context.exception)
+		self.assertTrue(BENCODED_STRING_ERROR_SHORT in context.exception)
 		with self.assertRaises(ValueError) as context:
 			bdecode("5:test")
-		self.assertTrue("Bencoded data invalid (string)" in context.exception)
+		self.assertTrue(BENCODED_STRING_ERROR_GENERAL in context.exception)
 
 	def test_list(self):
 		self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
 		self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:be"))
 		self.assertEqual([1, [2, 3, 4]], bdecode("li1eli2ei3ei4eee"))
+
+	def test_dict(self):
+		self.assertEqual({"key": "value"}, bdecode("d3:key5:valuee"))
+		self.assertEqual({"key": ["value", 1]}, bdecode("d3:keyl5:valuei1eee"))
 	
 if __name__ == "__main__":
 	unittest.main()
