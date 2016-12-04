@@ -214,9 +214,9 @@ class TestBencode(unittest.TestCase):
 		self.assertTrue(BENCODED_STRING_ERROR_GENERAL in context.exception)
 
 	def test_list(self):
-		#self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
-		#self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:be"))
-		#self.assertEqual([1, [2, 3, 4]], bdecode("li1eli2ei3ei4eee"))
+		self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
+		self.assertEqual([1, "a", 2, "b"], bdecode("li1e1:ai2e1:be"))
+		self.assertEqual([1, [2, 3, 4]], bdecode("li1eli2ei3ei4eee"))
 		self.assertEqual(["test", "list"], bdecode("l4:test4:liste"))
 
 	
