@@ -1,197 +1,139 @@
-import os
-import logging
+# The contents of this file are subject to the BitTorrent Open Source License
+# Version 1.1 (the License).  You may not copy or use this file, in either
+# source code or executable form, except in compliance with the License.  You
+# may obtain a copy of the License at http://www.bittorrent.com/license/.
+#
+# Software distributed under the License is distributed on an AS IS basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied.  See the License
+# for the specific language governing rights and limitations under the
+# License.
+
+# Written by Petru Paler
 import unittest
-from auxillarymethods import one_directory_back
-
-"""
-This method recursively bencodes a given value or string of values, and returns 
-the bencoded output.
-
-Bencoding specifications are as follows (via The Bitorrent
-Protocol Specification - http://bittorrent.org/beps/bep_0003.html):
-
-	+-------+
-	|Strings|
-	+-------+
-	Strings are length-prefixed base ten followed by a colon and the string. 
-		For example 4:spam corresponds to 'spam'.
-	
-	+--------+
-	|Integers|
-	+--------+
-	Integers are represented by an 'i' followed by the number in base 10 
-	followed by an 'e'. 
-		For example i3e corresponds to 3 and i-3e corresponds to -3. 
-	Integers have no size limitation. i-0e is invalid. 
-	All encodings with a leading zero, such as i03e, are invalid, 
-	other than i0e, which of course corresponds to 0.
-	
-	+-----+
-	|Lists|
-	+-----+
-	Lists are encoded as an 'l' followed by their elements (also bencoded) 
-	followed by an 'e'. 
-		For example l4:spam4:eggse corresponds to ['spam', 'eggs'].
-
-	+------------+
-	|Dictionaries|
-	+------------+
-	Dictionaries are encoded as a 'd' followed by a list of alternating 
-	keys and their corresponding values followed by an 'e'. 
-		For example, d3:cow3:moo4:spam4:eggse corresponds to 
-		{'cow': 'moo', 'spam': 'eggs'} and d4:spaml1:a1:bee corresponds to 
-		{'spam': ['a', 'b']}. 
-	Keys must be strings and appear in sorted order (sorted as raw strings, 
-	not alphanumerics).
-
-"""
-
-# Initialize logging
-logger = logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-root_dir = one_directory_back(os.getcwd())
-#log_dir = os.path.join(root_dir, "logs")
-#handler = logging.FileHandler(os.path.join(log_dir, "log.txt"))
-#handler.setLevel(logging.DEBUG)
-#formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-#handler.setFormatter(formatter)
-#logger.addHandler(handler)
-
-BENCODED_STRING_ERROR_SHORT = "Bencoded data invalid (string) [declared length was too short]"
-BENCODED_STRING_ERROR_GENERAL = "Bencoded data invalid (string) [unencoded length not equal to declared]"
-BENCODED_INT_ERROR_INPUT_VALUE = "Bencoded data invalid (int)"
-"""
-Bencodes the given input
-"""
-def encode(unencoded_input):
-	pass
+from BTL import BTFailure
 
 
-"""
-Returns the bdecoded result of a bencoded input
-"""
-def bdecode(bencoded_input):
+def decode_int(x, f):
+    f += 1
+    newf = x.index('e', f)
+    n = int(x[f:newf])
+    if x[f] == '-':
+        if x[f + 1] == '0':
+            raise ValueError
+    elif x[f] == '0' and newf != f+1:
+        raise ValueError
+    return (n, newf+1)
 
-	logger.info("Decoding input: {}".format(bencoded_input))
+def decode_string(x, f):
+    colon = x.index(':', f)
+    n = int(x[f:colon])
+    if x[f] == '0' and colon != f+1:
+        raise ValueError
+    colon += 1
+    return (x[colon:colon+n], colon+n)
 
-	# we have reached the end of our input
-	if bencoded_input == "":
-		return bencoded_input
+def decode_list(x, f):
+    r, f = [], f+1
+    while x[f] != 'e':
+        v, f = decode_func[x[f]](x, f)
+        r.append(v)
+    return (r, f + 1)
 
-	for index,character in enumerate(bencoded_input):
+def decode_dict(x, f):
+    r, f = {}, f+1
+    while x[f] != 'e':
+        k, f = decode_string(x, f)
+        r[k], f = decode_func[x[f]](x, f)
+    return (r, f + 1)
 
-		if character == "i":
-			return bdecode_int(bencoded_input)
-		
-		elif is_int(character):
-			return bdecode_string(bencoded_input)
-		
-		elif character == "l":
-			logger.debug("Decoding list: {}".format(bencoded_input))
-			next_object_index = 0
-			return_list = []
-			bencoded_list_contents = bencoded_input[1:-1]
-			for idx,char in enumerate(bencoded_list_contents):
-				remaining_list_contents = bencoded_list_contents[idx:]
-				logger.debug("Iteration ({}): Current_char ({}) | next_object ({}) | remaining_list ({})".format(idx, char, next_object_index, remaining_list_contents))
-				if idx == next_object_index:
-					if char == "i":
-						end_of_int_index = remaining_list_contents.find("e") + 1 + idx
-						next_object_index = end_of_int_index
-						logger.debug("Decoding int: end_of_int_index ({}) | next_object_index ({})".format(end_of_int_index, next_object_index))\
+decode_func = {}
+decode_func['l'] = decode_list
+decode_func['d'] = decode_dict
+decode_func['i'] = decode_int
+decode_func['0'] = decode_string
+decode_func['1'] = decode_string
+decode_func['2'] = decode_string
+decode_func['3'] = decode_string
+decode_func['4'] = decode_string
+decode_func['5'] = decode_string
+decode_func['6'] = decode_string
+decode_func['7'] = decode_string
+decode_func['8'] = decode_string
+decode_func['9'] = decode_string
 
-						return_list.append(bdecode(bencoded_list_contents[idx:end_of_int_index]))
-					
-					elif is_int(char):
-						length_of_string = int(bencoded_list_contents[idx])
-						lolos = len(str(length_of_string))
-						next_object_index = idx + length_of_string + 1 + lolos
-						string_subsection = bencoded_list_contents[idx:next_object_index]
-						remaining_area = bencoded_list_contents[next_object_index:]
-						logger.debug("Decoding string: idx ({}) | length_of_string ({}) | \
-lolos ({}) | next_object_index ({}) | string_subsection ({}) | remaining_area ({})".format(idx,length_of_string,lolos, next_object_index, string_subsection, remaining_area))
+def bdecode(x):
+    try:
+        r, l = decode_func[x[0]](x, 0)
+    except (IndexError, KeyError, ValueError):
+        raise BTFailure("not a valid bencoded string\ninput:{}".format(x))
+    if l != len(x):
+        raise BTFailure("invalid bencoded value (data after valid prefix)\ninput:{}".format(x))
+    return r
 
-						return_list.append(bdecode(string_subsection))
-					
-					else:
-						logger.debug("Decoding non-int / non-string")
-						return_list.append(bdecode(remaining_list_contents))
-
-			return return_list
-
-		elif character == "d":
-			logger.debug("Decoding dictionary: {}".format(bencoded_input))
-			bencoded_list_contents = bencoded_input[1:-1]
-			return_dict = {}
-
-			logger.debug("Iteration ({}): Current_char ({}) | remaining_dict ({})".format("d", "c", bencoded_list_contents))
-			
-			lok = int(bencoded_list_contents.split(":")[0])
-			lolok = len(str(lok))
-			offset = lolok + 1
-
-			key = bdecode_string(bencoded_list_contents[:lok+offset]) # key is string, int is length
-			return_dict[key] = bdecode(bencoded_list_contents[lok+offset:])
+from types import StringType, IntType, LongType, DictType, ListType, TupleType
 
 
-			return return_dict
+class Bencached(object):
 
+    __slots__ = ['bencoded']
 
-def bdecode_int(bencoded_int):
-	try:
-		end_of_int_index = bencoded_int.find("e")
-		int_value = int(bencoded_int[1:end_of_int_index])
-		return int_value
-	
-	except Exception as e:
-		raise ValueError(BENCODED_INT_ERROR_INPUT_VALUE)
-		print ("bencoded:({})\nendofint:({})\nintvalue:({})".format(end_of_int_index,int_value))
+    def __init__(self, s):
+        self.bencoded = s
 
+def encode_bencached(x,r):
+    r.append(x.bencoded)
 
-def bdecode_string(bencoded_string):
-	# length of string
-	los = int(bencoded_string.split(":")[0])
-	# length of the length of string (decimal places)
-	lolos = len(str(los))
-	# first letter index
-	fli = lolos + 1 # for ':' char
-	# last letter index
-	lli = lolos + los + 1 # for ':' char
-	unenc_string = bencoded_string[fli:lli]
-	# what is left in our string
-	leftover = bencoded_string[lli:]
-	# check if our unencoded string has more values than indicated by the
-	#	los field, or if there are not enough values in the string as the
-	#	amount allocated by the los field
-	if leftover != "":
-		logger.error("ERROR - BENCODED_STRING: ({})".format(bencoded_string))
-		raise ValueError(BENCODED_STRING_ERROR_SHORT)
-	if los != len(unenc_string):
-		logger.error("ERROR: - ENCODED_STRING: ({})".format(bencoded_string))
-		raise ValueError(BENCODED_STRING_ERROR_GENERAL)
-	
-	else:
-		return unenc_string
+def encode_int(x, r):
+    r.extend(('i', str(x), 'e'))
 
-"""
-Returns true if input string is a string representation of an int
-"""
-def is_int(string_input):
-	try:
-		int(string_input)
-		return True
-	except ValueError:
-		return False
-		
+def encode_bool(x, r):
+    if x:
+        encode_int(1, r)
+    else:
+        encode_int(0, r)
+        
+def encode_string(x, r):
+    r.extend((str(len(x)), ':', x))
+
+def encode_list(x, r):
+    r.append('l')
+    for i in x:
+        encode_func[type(i)](i, r)
+    r.append('e')
+
+def encode_dict(x,r):
+    r.append('d')
+    ilist = x.items()
+    ilist.sort()
+    for k, v in ilist:
+        r.extend((str(len(k)), ':', k))
+        encode_func[type(v)](v, r)
+    r.append('e')
+
+encode_func = {}
+encode_func[Bencached] = encode_bencached
+encode_func[IntType] = encode_int
+encode_func[LongType] = encode_int
+encode_func[StringType] = encode_string
+encode_func[ListType] = encode_list
+encode_func[TupleType] = encode_list
+encode_func[DictType] = encode_dict
+
+try:
+    from types import BooleanType
+    encode_func[BooleanType] = encode_bool
+except ImportError:
+    pass
+
+def bencode(x):
+    r = []
+    encode_func[type(x)](x, r)
+    return ''.join(r)
 
 """
 Unit tests
 """
 class TestBencode(unittest.TestCase):
-	
-	def test_is_int(self):
-		self.assertEqual(True, is_int("1"))
-		self.assertEqual(True, is_int("-1"))
 
 	def test_int(self):
 		self.assertEqual(1, bdecode("i1e"))
@@ -199,20 +141,17 @@ class TestBencode(unittest.TestCase):
 		self.assertEqual(100, bdecode("i100e"))
 		
 		# Error raising
-		with self.assertRaises(ValueError) as context:
+		with self.assertRaises(BTFailure) as context:
 			bdecode("i10ae")
-		self.assertTrue(BENCODED_INT_ERROR_INPUT_VALUE in context.exception)
 
 	def test_string(self):
 		self.assertEqual("", bdecode("0:"))
 		self.assertEqual("test", bdecode("4:test"))
 		self.assertEqual("holy guacamole", bdecode("14:holy guacamole"))
-		with self.assertRaises(ValueError) as context:
+		with self.assertRaises(BTFailure) as context:
 			bdecode("3:test")
-		self.assertTrue(BENCODED_STRING_ERROR_SHORT in context.exception)
-		with self.assertRaises(ValueError) as context:
+		with self.assertRaises(BTFailure) as context:
 			bdecode("5:test")
-		self.assertTrue(BENCODED_STRING_ERROR_GENERAL in context.exception)
 
 	def test_list(self):
 		self.assertEqual([1, 2, 3, 4], bdecode("li1ei2ei3ei4ee"))
@@ -229,27 +168,3 @@ class TestBencode(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
