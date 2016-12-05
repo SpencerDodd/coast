@@ -7,7 +7,10 @@ This is the main torrent client file.
 class Client:
 	def __init__(self):
 		"""
-		Dictionary of active torrents. Key value is the name 
+		Dictionary of active torrents
+		
+		Key value is the name of the torrent file
+		Value is a dict of info about the torrent file (tbd)
 		"""
 		self.active_torrents = {}
 
