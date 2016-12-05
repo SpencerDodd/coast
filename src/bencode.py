@@ -50,12 +50,12 @@ Protocol Specification - http://bittorrent.org/beps/bep_0003.html):
 logger = logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 root_dir = one_directory_back(os.getcwd())
-log_dir = os.path.join(root_dir, "logs")
-handler = logging.FileHandler(os.path.join(log_dir, "log.txt"))
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+#log_dir = os.path.join(root_dir, "logs")
+#handler = logging.FileHandler(os.path.join(log_dir, "log.txt"))
+#handler.setLevel(logging.DEBUG)
+#formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+#handler.setFormatter(formatter)
+#logger.addHandler(handler)
 
 BENCODED_STRING_ERROR_SHORT = "Bencoded data invalid (string) [declared length was too short]"
 BENCODED_STRING_ERROR_GENERAL = "Bencoded data invalid (string) [unencoded length not equal to declared]"
