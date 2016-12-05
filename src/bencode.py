@@ -204,6 +204,7 @@ class TestBencode(unittest.TestCase):
 		self.assertTrue(BENCODED_INT_ERROR_INPUT_VALUE in context.exception)
 
 	def test_string(self):
+		self.assertEqual("", bdecode("0:"))
 		self.assertEqual("test", bdecode("4:test"))
 		self.assertEqual("holy guacamole", bdecode("14:holy guacamole"))
 		with self.assertRaises(ValueError) as context:
