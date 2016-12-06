@@ -1,7 +1,9 @@
 import os
+import time
 import bencode
 import unittest
 import traceback
+from auxillarymethods import one_directory_back
 
 """
 This class represents a torrent. It holds information (metadata) about the torrent
@@ -16,49 +18,45 @@ class Torrent:
 		# essential content
 		self._info = None								# dictionary
 		self._announce = None							# string
-		# optional content
-		self._announce_list = None						# list
-		self._creation_date = None						# int
-		self._comment = None							# string
-		self._created_by = None							# string
-		self._encoding = None							# string
-
-		"""
-		Client information fields
-		"""
-		self.peer_id = None								# string
-		self.port = None								# int
 
 		"""
 		Tracker request fields
 		"""
-		self.info_hash = None							# string
-		self.bytes_downloaded = 0						# int
-		self.bytes_uploaded = 0							# int
-		self.bytes_left = None							# int
-		self.compact = 0								# string
-		self.no_peer_id = 0								# int
-		self.event = "started"							# string
-		self.ip = None									# string
-		self.key = None									# (string or int)
-		self.trackerid = None							# string
+		self.tracker_request = {
+			"info_hash":None,
+			"peer_id":None,
+			"port":None,
+			"uploaded":0,
+			"downloaded":0,
+			"left":None,
+			"compact":0,
+			"no_peer_id":0,
+			"event":"started",
+			"ip":None,
+			"numwant":None,
+			"key":None,
+			"trackerid":None
+		}
 
 		"""
 		Tracker response fields
 		"""
-		self.failure_reason = None						# string
-		self.warning_message = None						# string
-		self.interval = None							# int
-		self.last_announce = None						# int
-		self.min_announce_interval = None				# int
-		self.tracker_id = None							# string
-		self.seeders = None 							# int
-		self.leechers = None							# int
-		self.peers = None 								# string or dictionary
+		self.tracker_response = {
+			"failure reason":None,
+			"warning message":None,
+			"interval":None,
+			"min interval":None,
+			"tracker id":None,
+			"complete":None,
+			"incomplete":None,
+			"peers":None,
+		}
 
 		"""
 		Status fields for the torrent
 		"""
+		self.last_request = None
+		self.last_announce = None
 		self.metadata_initialized = False
 		self.event_set = False
 
@@ -111,8 +109,32 @@ class Torrent:
 		else:
 			raise AttributeError("Torrent metadata not initialized")
 
-		"""
-	Make a request to a tracker about a given torrent
+	"""
+	Returns true if the torrent can make an announce request
+
+	Relevant standards information / response fields:
+	---------------------------------------------------------------------------
+	interval: Interval in seconds that the client should wait between sending 
+		regular requests to the tracker
+	min interval: (optional) Minimum announce interval. If present clients must
+		not reannounce more frequently than this.
+	---------------------------------------------------------------------------
+	"""
+	def can_request(self):
+		time_since_request = time.time() - self.last_request
+
+		if self.tracker_response["interval"] is None:
+			return True
+
+		elif time_since_request > self.tracker_response["interval"]:
+			return True
+
+		else:
+			return False
+
+	"""
+	Return a string representing a request to make to the torrent's tracker.
+	This request is handled by the NetworkHandler.
 
 	The tracker is an HTTP/HTTPS service which responds to HTTP GET requests. 
 	The requests include metrics from clients that help the tracker keep 
@@ -213,11 +235,52 @@ class Torrent:
 
 		trackerid: Optional. If a previous announce contained a tracker id, it 
 			should be set here.
+	"""
+
+	def get_tracker_request(self):
+		request_text = "{}?info_hash={}".format(self._announce,
+								self.info_hash)
+
+		for request_field in self.tracker_request.keys():
+			field_data = self.tracker_request[request_field]
+			if field_data is not None:
+				request_text += "&{}={}".format(request_field, field_data)
+
+		return request_text
 
 	"""
-	def make_tracker_request(self):
-		pass
+	input: String, output: void
 
+	Updates the torrent based on a response from the tracker
+
+	failure reason: If present, then no other keys may be present. The value is
+		a human-readable error message as to why the request failed (string).
+	warning message: (new, optional) Similar to failure reason, but the 
+		response still gets processed normally. The warning message is shown 
+		just like an error.
+	interval: Interval in seconds that the client should wait between sending 
+		regular requests to the tracker
+	min interval: (optional) Minimum announce interval. If present clients must
+		not reannounce more frequently than this.
+	tracker id: A string that the client should send back on its next 
+		announcements. If absent and a previous announce sent a tracker id, 
+		do not discard the old value; keep using it.
+	complete: number of peers with the entire file, i.e. seeders (integer)
+	incomplete: number of non-seeder peers, aka "leechers" (integer)
+	peers: (dictionary model) The value is a list of dictionaries, each with 
+		the following keys:
+	peer id: peer's self-selected ID, as described above for the tracker 
+		request (string)
+	ip: peer's IP address either IPv6 (hexed) or IPv4 (dotted quad) or DNS 
+		name (string)
+	port: peer's port number (integer)
+	peers: (binary model) Instead of using the dictionary model described 
+		above, the peers value may be a string consisting of multiples of 6 
+		bytes. First 4 bytes are the IP address and last 2 bytes are the port 
+		number. All in network (big endian) notation.
+	"""
+	def process_tracker_response(self, tracker_response):
+		pass
 
 class TestTorrent(unittest.TestCase):
 	
