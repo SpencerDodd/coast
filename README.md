@@ -1,2 +1,2 @@
-# torrent_client
+# coast
 This is a project for personal education purposes. So, likely, there will be many embarrassing commits. Try to withhold judgement...

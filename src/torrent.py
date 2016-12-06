@@ -2,7 +2,6 @@ import os
 import bencode
 import unittest
 import traceback
-from auxillarymethods import one_directory_back
 
 """
 This class represents a torrent. It holds information (metadata) about the torrent
@@ -11,15 +10,54 @@ as parsed from the .torrent file.
 class Torrent:
 
 	def __init__(self):
+		"""
+		Metadata fields
+		"""
 		# essential content
-		self._info = None
-		self._announce = None
+		self._info = None								# dictionary
+		self._announce = None							# string
 		# optional content
-		self._announce_list = None
-		self._creation_date = None
-		self._comment = None
-		self._created_by = None
-		self._encoding = None
+		self._announce_list = None						# list
+		self._creation_date = None						# int
+		self._comment = None							# string
+		self._created_by = None							# string
+		self._encoding = None							# string
+
+		"""
+		Client information fields
+		"""
+		self.peer_id = None								# string
+		self.port = None								# int
+
+		"""
+		Tracker request fields
+		"""
+		self.info_hash = None							# string
+		self.bytes_downloaded = 0						# int
+		self.bytes_uploaded = 0							# int
+		self.bytes_left = None							# int
+		self.compact = 0								# string
+		self.no_peer_id = 0								# int
+		self.event = "started"							# string
+
+		"""
+		Tracker response fields
+		"""
+		self.failure_reason = None						# string
+		self.warning_message = None						# string
+		self.interval = None							# int
+		self.last_announce = None						# int
+		self.min_announce_interval = None				# int
+		self.tracker_id = None							# string
+		self.seeders = None 							# int
+		self.leechers = None							# int
+		self.peers = None 								# string or dictionary
+
+		"""
+		Status fields for the torrent
+		"""
+		self.metadata_initialized = False
+		self.event_set = False
 
 	"""
 	Fills in torrent information by reading from a metadata file (.torrent)
@@ -48,6 +86,8 @@ class Torrent:
 					if "encoding" in meta_keys:
 						self._encoding = decoded_data["encoding"]
 
+				self.metadata_initialized = True
+
 			except Exception as e:
 				error_message = "File is improperly formatted\n{}".format(traceback.format_exc(e))
 				raise ValueError(error_message)
@@ -56,11 +96,20 @@ class Torrent:
 		else:
 			raise ValueError("File is not .torrent type")
 
+	"""
+	Initializes the torrent for requests to the tracker
+	"""
+	def intialize_for_tracker_requests(self, peer_id, port):
+		if self.metadata_initialized:
+			self.peer_id = peer_id
+			self.port = port
+			self.info_hash = hashlib.sha1(self._info).digest()
+			self.bytes_left = self._info["length"]
+		else:
+			raise AttributeError("Torrent metadata not initialized")
+
 
 class TestTorrent(unittest.TestCase):
-	"""
-	d8:announce44:http://torrent.testtorrent.com:6969/announce13:announce-listll44:http://torrent.testtorrent.com:6969/announceel50:http://ipv6.torrent.testtorrent.com:6969/announceee7:comment12:Test Torrent13:creation datei1476352188e4:infod6:lengthi1593835520e4:name28:test-torrent.iso.mp3.avi.exe12:piece lengthi1337e6:pieces4:testee
-	"""
 	
 	def test_metadate_from_file(self):
 		test_torrent = Torrent()

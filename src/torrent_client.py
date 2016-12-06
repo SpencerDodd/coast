@@ -40,7 +40,16 @@ class Client:
 		return "-{}{}-{}".format(CLIENT_ID_STRING,CURRENT_VERSION,peer_id_sub)
 
 	"""
-	Make a request to a tracker for a given torrent object
+	Make a request to a tracker about a given torrent
+
+	The tracker is an HTTP/HTTPS service which responds to HTTP GET requests. 
+	The requests include metrics from clients that help the tracker keep 
+	overall statistics about the torrent. The response includes a peer list 
+	that helps the client participate in the torrent. The base URL consists 
+	of the "announce URL" as defined in the metainfo (.torrent) file. The 
+	parameters are then added to this URL, using standard CGI methods (i.e. 
+	a '?' after the announce URL, followed by 'param=value' sequences separated 
+	by '&').
 
 	Parameters used in the client->tracker GET are as follows:
 	(From the unofficial spec: https://wiki.theory.org/BitTorrentSpecification)
@@ -122,9 +131,20 @@ class Client:
 			In case of IPv6 address (e.g.: 2001:db8:1:2::100) it indicates only
 			that client can communicate via IPv6.
 
+		numwant: Optional. Number of peers that the client would like to 
+			receive from the tracker. This value is permitted to be zero. If 
+			omitted, typically defaults to 50 peers.
+
+		key: Optional. An additional identification that is not shared with 
+			any other peers. It is intended to allow a client to prove their 
+			identity should their IP address change.
+
+		trackerid: Optional. If a previous announce contained a tracker id, it 
+			should be set here.
+
 	"""
 	def make_tracker_request(torrent_to_request):
-		info_hash = hashlib.sha1(torrent_to_request._info).digest()
+		pass
 
 
 class TestClient(unittest.TestCase):
