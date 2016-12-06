@@ -1,6 +1,10 @@
+import re
 import os
 import time
+import urllib
 import bencode
+import hashlib
+import requests
 import unittest
 import traceback
 from auxillarymethods import one_directory_back
@@ -18,7 +22,6 @@ class Torrent:
 		# essential content
 		self._info = None								# dictionary
 		self._announce = None							# string
-
 		"""
 		Tracker request fields
 		"""
@@ -33,7 +36,7 @@ class Torrent:
 			"no_peer_id":0,
 			"event":"started",
 			"ip":None,
-			"numwant":None,
+			"numwant":200,
 			"key":None,
 			"trackerid":None
 		}
@@ -59,6 +62,7 @@ class Torrent:
 		self.last_announce = None
 		self.metadata_initialized = False
 		self.event_set = False
+		self.last_response_object = None
 
 	"""
 	Fills in torrent information by reading from a metadata file (.torrent)
@@ -74,6 +78,7 @@ class Torrent:
 					# fill in our essential fields
 					self._announce = decoded_data["announce"]
 					self._info = decoded_data["info"]
+
 					# fill in our optional fields if they exist
 					meta_keys = decoded_data.keys()
 					if "announce-list" in meta_keys:
@@ -102,10 +107,10 @@ class Torrent:
 	"""
 	def intialize_for_tracker_requests(self, peer_id, port):
 		if self.metadata_initialized:
-			self.peer_id = peer_id
-			self.port = port
-			self.info_hash = hashlib.sha1(self._info).digest()
-			self.bytes_left = self._info["length"]
+			self.tracker_request["peer_id"] = peer_id
+			self.tracker_request["port"] = port
+			self.tracker_request["info_hash"] = self.generate_info_hash()
+			self.tracker_request["left"] = self._info["length"]
 		else:
 			raise AttributeError("Torrent metadata not initialized")
 
@@ -121,16 +126,43 @@ class Torrent:
 	---------------------------------------------------------------------------
 	"""
 	def can_request(self):
-		time_since_request = time.time() - self.last_request
+		if self.last_request is not None:
+			time_since_request = time.time() - self.last_request
 
-		if self.tracker_response["interval"] is None:
-			return True
+			if self.tracker_response["interval"] is None:
+				return True
 
-		elif time_since_request > self.tracker_response["interval"]:
-			return True
+			elif time_since_request > self.tracker_response["interval"]:
+				return True
 
+			else:
+				return False
 		else:
-			return False
+			return True
+
+	"""
+	Generates an ascii hash of the bencoded info dict
+	"""
+	def generate_ascii_info_hash(self):
+		bencoded_info_dict = bencode.bencode(self._info)
+		return hashlib.sha1(bencoded_info_dict).hexdigest()
+	"""
+	Generates a hex hash of the bencoded info dict
+	"""
+	def generate_hex_info_hash(self):
+		bencoded_info_dict = bencode.bencode(self._info)
+		return hashlib.sha1(bencoded_info_dict).digest()
+
+	"""
+	Generates the final URL-encoded hash of the hex hash of the bencoded info
+	dict.
+
+	Reserves RFC unreserved characters -_.!~*'()
+	"""
+	def generate_info_hash(self):
+		sha1_hash = self.generate_hex_info_hash()
+		url_encoded_hash = urllib.quote(sha1_hash, safe="-_.!~*'()")
+		return url_encoded_hash
 
 	"""
 	Return a string representing a request to make to the torrent's tracker.
@@ -238,8 +270,7 @@ class Torrent:
 	"""
 
 	def get_tracker_request(self):
-		request_text = "{}?info_hash={}".format(self._announce,
-								self.info_hash)
+		request_text = self._announce
 
 		for request_field in self.tracker_request.keys():
 			field_data = self.tracker_request[request_field]
@@ -280,9 +311,19 @@ class Torrent:
 		number. All in network (big endian) notation.
 	"""
 	def process_tracker_response(self, tracker_response):
-		pass
+		self.last_response_object = tracker_response
+
+	def get_last_response(self):
+		return self.last_response_object
 
 class TestTorrent(unittest.TestCase):
+
+	def test_urlencode_hash(self):
+		test_sha1_hash = "0403fb4728bd788fbcb67e87d6feb241ef38c75a"
+		text_hex_hash = "\x04\x03\xfbG(\xbdx\x8f\xbc\xb6~\x87\xd6\xfe\xb2A\xef8\xc7Z"
+		expected_url_hash = "%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z"
+
+		self.assertEqual(expected_url_hash, urllib.quote(text_hex_hash, safe="-_.!~*'()"))
 	
 	def test_metadate_from_file(self):
 		test_torrent = Torrent()
@@ -301,6 +342,7 @@ class TestTorrent(unittest.TestCase):
 		expected_info["length"] = 1593835520
 		expected_info["name"] = "ubuntu-16.10-desktop-amd64.iso"
 		expected_info["piece length"] = 524288
+		expected_info_hash = "%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z"
 		#expected_info["pieces"] = (Omitted due to size and gibberish)
 
 		self.assertEqual(expected_announce, test_torrent._announce)
@@ -309,11 +351,34 @@ class TestTorrent(unittest.TestCase):
 		self.assertEqual(expected_info["name"], test_torrent._info["name"])
 		self.assertEqual(expected_info["piece length"], test_torrent._info["piece length"])
 		self.assertEqual(60800, len(test_torrent._info["pieces"]))
+		self.assertEqual(expected_info_hash, test_torrent.generate_info_hash())
+
+	def test_tracker_request(self):
+		test_torrent = Torrent()
+		root_dir = one_directory_back(os.getcwd())
+		test_data_directory = os.path.join(root_dir, "test_data/")
+		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
+		test_torrent.initialize_metadata_from_file(os.path.join(test_data_directory,test_torrent_file))
+
+		peer_id = "-Co0001-7a673c102d185bdbd3d1691cc66d3c36"
+		port = 6881
+		test_torrent.intialize_for_tracker_requests(peer_id, port)
+
+		expected_request = "http://torrent.ubuntu.com:6969/announce&upload" + \
+		"ed=0&info_hash=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&dow" + \
+		"nloaded=0&event=started&compact=0&numwant=200&no_peer_id=0&port=6" + \
+		"881&peer_id=-Co0001-7a673c102d185bdbd3d1691cc66d3c36&left=1593835520"
+
+		deluge_request = "http://torrent.ubuntu.com:6969/announce?info_has" + \
+		"h=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&peer_id=-DE13D0-" + \
+		"3qXsknyO08~0&port=55434&uploaded=0&downloaded=7189540&left=159016" + \
+		"5504&corrupt=0&key=7BF44946&event=stopped&numwant=0&compact=1&no_" + \
+		"peer_id=1&supportcrypto=1&redundant=0"
+
+		self.assertEqual(expected_request, test_torrent.get_tracker_request())
 
 if __name__ == "__main__":
 	unittest.main()
-
-
 
 
 
