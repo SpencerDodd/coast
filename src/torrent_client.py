@@ -35,7 +35,7 @@ class Client:
 	def generate_peer_id(self):
 		seed_string = "{}{}{}".format(os.getpgid(0), os.getcwd(), os.getlogin())
 		pre_versioned_peer_id = hashlib.sha1(seed_string).hexdigest()
-		peer_id_sub = pre_versioned_peer_id[8:]
+		peer_id_sub = pre_versioned_peer_id[28:]
 		
 		return "-{}{}-{}".format(CLIENT_ID_STRING,CURRENT_VERSION,peer_id_sub)
 
@@ -44,7 +44,7 @@ class TestClient(unittest.TestCase):
 	def test_peer_id_generation(self):
 		test_client = Client()
 		test_client.generate_peer_id()
-		self.assertEquals(40, len(test_client._peer_id))
+		self.assertEquals(20, len(test_client._peer_id))
 
 if __name__ == "__main__":
 	unittest.main()
