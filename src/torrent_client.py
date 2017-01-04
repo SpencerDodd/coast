@@ -13,7 +13,7 @@ CURRENT_VERSION = "0001"
 LISTENING_PORT = 6881 # usually 6881-6889
 
 """
-This is the main torrent client file.
+This is the core of the torrent client.
 """
 class Client:
 	def __init__(self):
@@ -39,6 +39,9 @@ class Client:
 		
 		return "-{}{}-{}".format(CLIENT_ID_STRING,CURRENT_VERSION,peer_id_sub)
 
+"""
+Tests
+"""
 
 class TestClient(unittest.TestCase):
 	def test_peer_id_generation(self):
@@ -48,3 +51,9 @@ class TestClient(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+
+
+
+

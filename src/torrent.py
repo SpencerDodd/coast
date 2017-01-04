@@ -9,6 +9,11 @@ import unittest
 import traceback
 from auxillarymethods import one_directory_back
 
+from peer import Peer
+
+# Error messages
+ERROR_BYTESTRING_CHUNKSIZE = "Input not divisible by chunk size"
+
 """
 This class represents a torrent. It holds information (metadata) about the torrent
 as parsed from the .torrent file.
@@ -63,6 +68,11 @@ class Torrent:
 		self.metadata_initialized = False
 		self.event_set = False
 		self.last_response_object = None
+
+		"""
+		Data fields
+		"""
+		self.peers = []
 
 	"""
 	Fills in torrent information by reading from a metadata file (.torrent)
@@ -270,11 +280,11 @@ class Torrent:
 	"""
 
 	def get_tracker_request(self):
-		request_text = self._announce
+		request_text = "{}?info_hash={}".format(self._announce, self.tracker_request["info_hash"])
 
 		for request_field in self.tracker_request.keys():
 			field_data = self.tracker_request[request_field]
-			if field_data is not None:
+			if request_field is not "info_hash" and field_data is not None:
 				request_text += "&{}={}".format(request_field, field_data)
 
 		return request_text
@@ -312,9 +322,50 @@ class Torrent:
 	"""
 	def process_tracker_response(self, tracker_response):
 		self.last_response_object = tracker_response
+		response_text = tracker_response.text
+		decoded_response = bencode.bdecode(response_text)
+						
+		for response_field in decoded_response.keys():
+			self.tracker_response[response_field] = decoded_response[response_field]
+
+		self.populate_peers()
 
 	def get_last_response(self):
 		return self.last_response_object
+
+	"""
+	Creates peer objects from the peer field (hex) of the response object
+	from the tracker
+	"""
+	def populate_peers(self):
+		if self.tracker_response["peers"] is None:
+			raise Exception("Peers not populated (check tracker response)")
+
+		else:
+			chunked_peers = self.chunk_bytestring(self.tracker_response["peers"])
+			for peer_chunk in chunked_peers:
+				new_peer = Peer()
+				new_peer.initialize_with_chunk(peer_chunk)
+				self.peers.append(new_peer)
+
+			print (":".join(str(ord(x)) for x in self.tracker_response["peers"]))
+
+	"""
+	Chunks a bytestring into an array of (default) 6-byte pieces
+
+	Used for:
+		parsing bytestring for peers into individual peers
+	"""
+	def chunk_bytestring(self, input, length=6):
+		if len(input) % length != 0:
+			raise Exception(ERROR_BYTESTRING_CHUNKSIZE)
+		else:
+			return [input[x:x+length] for x in range(0, len(input), length)]
+
+
+"""
+Tests
+"""
 
 class TestTorrent(unittest.TestCase):
 
@@ -360,22 +411,37 @@ class TestTorrent(unittest.TestCase):
 		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
 		test_torrent.initialize_metadata_from_file(os.path.join(test_data_directory,test_torrent_file))
 
-		peer_id = "-Co0001-7a673c102d185bdbd3d1691cc66d3c36"
+		peer_id = "-Co0001-7a673c102d18"
 		port = 6881
 		test_torrent.intialize_for_tracker_requests(peer_id, port)
 
-		expected_request = "http://torrent.ubuntu.com:6969/announce&upload" + \
-		"ed=0&info_hash=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&dow" + \
+		expected_request = "http://torrent.ubuntu.com:6969/announce?info_h" + \
+		"ash=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&uploaded=0&dow" + \
 		"nloaded=0&event=started&compact=0&numwant=200&no_peer_id=0&port=6" + \
-		"881&peer_id=-Co0001-7a673c102d185bdbd3d1691cc66d3c36&left=1593835520"
+		"881&peer_id=-Co0001-7a673c102d18&left=1593835520"
 
 		deluge_request = "http://torrent.ubuntu.com:6969/announce?info_has" + \
 		"h=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&peer_id=-DE13D0-" + \
-		"3qXsknyO08~0&port=55434&uploaded=0&downloaded=7189540&left=159016" + \
-		"5504&corrupt=0&key=7BF44946&event=stopped&numwant=0&compact=1&no_" + \
-		"peer_id=1&supportcrypto=1&redundant=0"
+		"3qXsknyO08~0&port=55434&uploaded=0&downloaded=7189540&left=5504&c" + \
+		"orrupt=0&key=7BF44946&event=stopped&numwant=0&compact=1&no_peer_i" + \
+		"d=1&supportcrypto=1&redundant=0"
 
 		self.assertEqual(expected_request, test_torrent.get_tracker_request())
+
+	def test_chunk_bytestring(self):
+		test_peer_chunk = u"N\xe6\xcd2\xc5DN\xe6\xcd2\xc5D"
+		test_torrent = Torrent()
+		expected_chunks = 2
+
+		self.assertEqual(expected_chunks, len(test_torrent.chunk_bytestring(test_peer_chunk)))
+
+		test_broken_chunk = u"N\xe6\xcd2\xc5DN\xe6\xcd2\xc5De"
+		with self.assertRaises(Exception) as context:
+			test_torrent.chunk_bytestring(test_broken_chunk)
+		self.assertTrue(ERROR_BYTESTRING_CHUNKSIZE in context.exception)
+
+	def test_populate_peers(self):
+		pass
 
 if __name__ == "__main__":
 	unittest.main()

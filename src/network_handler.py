@@ -46,14 +46,13 @@ class NetworkHanderTests(unittest.TestCase):
 		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
 		test_torrent.initialize_metadata_from_file(os.path.join(test_data_directory,test_torrent_file))
 
-		peer_id = "-Co0001-7a673c102d185bdbd3d1691cc66d3c36"
+		peer_id = "-Co0001-7a673c102d18"
 		port = 6881
 		test_torrent.intialize_for_tracker_requests(peer_id, port)
 
 		test_handler = NetworkHandler()
 		test_handler.add_torrent(test_torrent)
 		test_handler.send_requests_if_possible()
-		print (test_torrent.get_last_response().text)
 
 if __name__ == "__main__":
 	unittest.main()
