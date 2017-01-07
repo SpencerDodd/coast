@@ -9,6 +9,14 @@ class Peer:
 		self.ip = ""
 		self.port = None
 
+		# our control
+		self.am_choking = True
+		self.am_interested = False
+
+		# peer control
+		self.peer_choking = True
+		self.peer_interested = False
+
 	def initialize_with_chunk(self, byte_string_chunk):
 		self.byte_string_chunk = byte_string_chunk
 		ip_chunk = byte_string_chunk[:4]

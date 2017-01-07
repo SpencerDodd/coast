@@ -2,6 +2,7 @@ import re
 import os
 import time
 import urllib
+import socket
 import bencode
 import hashlib
 import requests
@@ -14,22 +15,31 @@ from peer import Peer
 # Error messages
 ERROR_BYTESTRING_CHUNKSIZE = "Input not divisible by chunk size"
 
+# TCP
+PROTOCOL_STRING = "BitTorrent Protocol"
+
 """
 This class represents a torrent. It holds information (metadata) about the torrent
 as parsed from the .torrent file.
 """
 class Torrent:
 
-	def __init__(self):
+	def __init__(self, peer_id, port, torrent_file_path):
+		""" initializes the torrent
+
+		:param peer_id -> the peer id of the client
+		:param port -> the port over which connections about the torrent are
+			made
 		"""
-		Metadata fields
-		"""
-		# essential content
+		self.peer_id = peer_id
+		self.port = port
+		self.torrent_file_path = torrent_file_path
+		
+		# Metadata fields
 		self._info = None								# dictionary
 		self._announce = None							# string
-		"""
-		Tracker request fields
-		"""
+		
+		# Tracker request fields
 		self.tracker_request = {
 			"info_hash":None,
 			"peer_id":None,
@@ -46,9 +56,7 @@ class Torrent:
 			"trackerid":None
 		}
 
-		"""
-		Tracker response fields
-		"""
+		# Tracker response fields
 		self.tracker_response = {
 			"failure reason":None,
 			"warning message":None,
@@ -60,28 +68,40 @@ class Torrent:
 			"peers":None,
 		}
 
-		"""
-		Status fields for the torrent
-		"""
+		# Status fields for the torrent
 		self.last_request = None
 		self.last_announce = None
 		self.metadata_initialized = False
 		self.event_set = False
 		self.last_response_object = None
 
-		"""
-		Data fields
-		"""
+
+		# Data fields
+		self.download_location = os.path.join(os.path.expanduser("~"), "Downloads/")
 		self.peers = []
 
-	"""
-	Fills in torrent information by reading from a metadata file (.torrent)
-	"""
-	def initialize_metadata_from_file(self, metadata_file_path):
+		try:
+			self.initialize_metadata_from_file()
+		except:
+			raise Exception("Torrent file not valid")
+
+		# Initialize the tracker request fields
+		self.tracker_request["peer_id"] = peer_id
+		self.tracker_request["port"] = port
+		self.tracker_request["info_hash"] = self.generate_info_hash()
+		self.tracker_request["left"] = self._info["length"]
+
+	
+	def initialize_metadata_from_file(self):
+		"""Fills in torrent information by reading from a metadata file (.torrent)
+
+		:param metadata_file_path -> string path of the location of the .torrent
+		file"""
+
 		# check if we have a torrent file
-		if ".torrent" == metadata_file_path[-8:]:
+		if ".torrent" == self.torrent_file_path[-8:]:
 			try:
-				with open(metadata_file_path, "r") as metadata_file:
+				with open(self.torrent_file_path, "r") as metadata_file:
 					metadata = metadata_file.read()
 					decoded_data = bencode.bdecode(metadata)
 
@@ -112,30 +132,21 @@ class Torrent:
 		else:
 			raise ValueError("File is not .torrent type")
 
-	"""
-	Initializes the torrent for requests to the tracker
-	"""
-	def intialize_for_tracker_requests(self, peer_id, port):
-		if self.metadata_initialized:
-			self.tracker_request["peer_id"] = peer_id
-			self.tracker_request["port"] = port
-			self.tracker_request["info_hash"] = self.generate_info_hash()
-			self.tracker_request["left"] = self._info["length"]
-		else:
-			raise AttributeError("Torrent metadata not initialized")
-
-	"""
-	Returns true if the torrent can make an announce request
-
-	Relevant standards information / response fields:
-	---------------------------------------------------------------------------
-	interval: Interval in seconds that the client should wait between sending 
-		regular requests to the tracker
-	min interval: (optional) Minimum announce interval. If present clients must
-		not reannounce more frequently than this.
-	---------------------------------------------------------------------------
-	"""
+	
 	def can_request(self):
+		"""
+		Returns true if the torrent can make an announce request
+
+		Relevant standards information / response fields:
+		---------------------------------------------------------------------------
+		interval: Interval in seconds that the client should wait between sending 
+			regular requests to the tracker
+		min interval: (optional) Minimum announce interval. If present clients must
+			not reannounce more frequently than this.
+		---------------------------------------------------------------------------
+		"""
+
+
 		if self.last_request is not None:
 			time_since_request = time.time() - self.last_request
 
@@ -150,136 +161,50 @@ class Torrent:
 		else:
 			return True
 
-	"""
-	Generates an ascii hash of the bencoded info dict
-	"""
+	
 	def generate_ascii_info_hash(self):
+		"""
+		Generates an ascii hash of the bencoded info dict
+		"""
 		bencoded_info_dict = bencode.bencode(self._info)
 		return hashlib.sha1(bencoded_info_dict).hexdigest()
-	"""
-	Generates a hex hash of the bencoded info dict
-	"""
+	
+
 	def generate_hex_info_hash(self):
+		"""
+		Generates a hex hash of the bencoded info dict
+		"""
 		bencoded_info_dict = bencode.bencode(self._info)
 		return hashlib.sha1(bencoded_info_dict).digest()
 
-	"""
-	Generates the final URL-encoded hash of the hex hash of the bencoded info
-	dict.
-
-	Reserves RFC unreserved characters -_.!~*'()
-	"""
+	
 	def generate_info_hash(self):
+		"""
+		Generates the final URL-encoded hash of the hex hash of the bencoded info
+		dict.
+
+		Reserves RFC unreserved characters -_.!~*'()
+		"""
 		sha1_hash = self.generate_hex_info_hash()
 		url_encoded_hash = urllib.quote(sha1_hash, safe="-_.!~*'()")
 		return url_encoded_hash
 
-	"""
-	Return a string representing a request to make to the torrent's tracker.
-	This request is handled by the NetworkHandler.
-
-	The tracker is an HTTP/HTTPS service which responds to HTTP GET requests. 
-	The requests include metrics from clients that help the tracker keep 
-	overall statistics about the torrent. The response includes a peer list 
-	that helps the client participate in the torrent. The base URL consists 
-	of the "announce URL" as defined in the metainfo (.torrent) file. The 
-	parameters are then added to this URL, using standard CGI methods (i.e. 
-	a '?' after the announce URL, followed by 'param=value' sequences separated 
-	by '&').
-
-	Parameters used in the client->tracker GET are as follows:
-	(From the unofficial spec: https://wiki.theory.org/BitTorrentSpecification)
-
-		info_hash: urlencoded 20-byte SHA1 hash of the value of the info key 
-			from the Metainfo file. Note that the value will be a bencoded 
-			dictionary, given the definition of the info key above.
-
-		peer_id: urlencoded 20-byte string used as a unique ID for the client, 
-			generated by the client at startup. This is allowed to be any 
-			value, and may be binary data. There are currently no guidelines 
-			for generating this peer ID. However, one may rightly presume that 
-			it must at least be unique for your local machine, thus should 
-			probably incorporate things like process ID and perhaps a 
-			timestamp recorded at startup. See peer_id below for common client 
-			encodings of this field.
-
-		port: The port number that the client is listening on. Ports reserved 
-			for BitTorrent are typically 6881-6889. Clients may choose to give 
-			up if it cannot establish a port within this range.
-
-		uploaded: The total amount uploaded (since the client sent the 
-			'started' event to the tracker) in base ten ASCII. While not 
-			explicitly stated in the official specification, the concensus is 
-			that this should be the total number of bytes uploaded.
-
-		downloaded: The total amount downloaded (since the client sent the 
-			'started' event to the tracker) in base ten ASCII. While not 
-			explicitly stated in the official specification, the consensus is 
-			that this should be the total number of bytes downloaded.
-
-		left: The number of bytes this client still has to download in base 
-			ten ASCII. Clarification: The number of bytes needed to download to
-			be 100% complete and get all the included files in the torrent.
-
-		compact: Setting this to 1 indicates that the client accepts a compact 
-			response. The peers list is replaced by a peers string with 6 bytes
-			per peer. The first four bytes are the host (in network byte order)
-			, the last two bytes are the port (again in network byte order). 
-			It should be noted that some trackers only support compact 
-			responses (for saving bandwidth) and either refuse requests 
-			without "compact=1" or simply send a compact response unless the 
-			request contains "compact=0" (in which case they will refuse the 
-			request.)
-
-		no_peer_id: Indicates that the tracker can omit peer id field in peers 
-			dictionary. This option is ignored if compact is enabled.
-
-		event: If specified, must be one of started, completed, stopped, (or
-			empty which is the same as not being specified). If not specified, 
-			then this request is one performed at regular intervals.
-			`event` flags:
-				started: The first request to the tracker must include the 
-					event key with this value.
-				stopped: Must be sent to the tracker if the client is shutting
-					down gracefully.
-				completed: Must be sent to the tracker when the download 
-					completes. However, must not be sent if the download was 
-					already 100% complete when the client started. Presumably,
-					this is to allow the tracker to increment the "completed 
-					downloads" metric based solely on this event.
-
-		ip: Optional. The true IP address of the client machine, in dotted quad
-			format or rfc3513 defined hexed IPv6 address. Notes: In general 
-			this parameter is not necessary as the address of the client can 
-			be determined from the IP address from which the HTTP request came.
-			The parameter is only needed in the case where the IP address that
-			the request came in on is not the IP address of the client. This 
-			happens if the client is communicating to the tracker through a 
-			proxy (or a transparent web proxy/cache.) It also is necessary when
-			both the client and the tracker are on the same local side of a NAT
-			gateway. The reason for this is that otherwise the tracker would 
-			give out the internal (RFC1918) address of the client, which is not
-			routable. Therefore the client must explicitly state its (external,
-			routable) IP address to be given out to external peers. Various 
-			trackers treat this parameter differently. Some only honor it only 
-			if the IP address that the request came in on is in RFC1918 space. 
-			Others honor it unconditionally, while others ignore it completely.
-			In case of IPv6 address (e.g.: 2001:db8:1:2::100) it indicates only
-			that client can communicate via IPv6.
-
-		numwant: Optional. Number of peers that the client would like to 
-			receive from the tracker. This value is permitted to be zero. If 
-			omitted, typically defaults to 50 peers.
-
-		key: Optional. An additional identification that is not shared with 
-			any other peers. It is intended to allow a client to prove their 
-			identity should their IP address change.
-
-		trackerid: Optional. If a previous announce contained a tracker id, it 
-			should be set here.
-	"""
 
 	def get_tracker_request(self):
+		"""
+		Return a string representing a request to make to the torrent's tracker.
+		This request is handled by the NetworkHandler.
+
+		The tracker is an HTTP/HTTPS service which responds to HTTP GET requests. 
+		The requests include metrics from clients that help the tracker keep 
+		overall statistics about the torrent. The response includes a peer list 
+		that helps the client participate in the torrent. The base URL consists 
+		of the "announce URL" as defined in the metainfo (.torrent) file. The 
+		parameters are then added to this URL, using standard CGI methods (i.e. 
+		a '?' after the announce URL, followed by 'param=value' sequences separated 
+		by '&').
+		"""
+
 		request_text = "{}?info_hash={}".format(self._announce, self.tracker_request["info_hash"])
 
 		for request_field in self.tracker_request.keys():
@@ -289,38 +214,13 @@ class Torrent:
 
 		return request_text
 
-	"""
-	input: String, output: void
-
-	Updates the torrent based on a response from the tracker
-
-	failure reason: If present, then no other keys may be present. The value is
-		a human-readable error message as to why the request failed (string).
-	warning message: (new, optional) Similar to failure reason, but the 
-		response still gets processed normally. The warning message is shown 
-		just like an error.
-	interval: Interval in seconds that the client should wait between sending 
-		regular requests to the tracker
-	min interval: (optional) Minimum announce interval. If present clients must
-		not reannounce more frequently than this.
-	tracker id: A string that the client should send back on its next 
-		announcements. If absent and a previous announce sent a tracker id, 
-		do not discard the old value; keep using it.
-	complete: number of peers with the entire file, i.e. seeders (integer)
-	incomplete: number of non-seeder peers, aka "leechers" (integer)
-	peers: (dictionary model) The value is a list of dictionaries, each with 
-		the following keys:
-	peer id: peer's self-selected ID, as described above for the tracker 
-		request (string)
-	ip: peer's IP address either IPv6 (hexed) or IPv4 (dotted quad) or DNS 
-		name (string)
-	port: peer's port number (integer)
-	peers: (binary model) Instead of using the dictionary model described 
-		above, the peers value may be a string consisting of multiples of 6 
-		bytes. First 4 bytes are the IP address and last 2 bytes are the port 
-		number. All in network (big endian) notation.
-	"""
+	
 	def process_tracker_response(self, tracker_response):
+		"""
+		input: String, output: void
+
+		Updates the torrent based on a response from the tracker
+		"""
 		self.last_response_object = tracker_response
 		response_text = tracker_response.text
 		decoded_response = bencode.bdecode(response_text)
@@ -330,14 +230,19 @@ class Torrent:
 
 		self.populate_peers()
 
+
 	def get_last_response(self):
+		"""
+		Returns the last response received by the torrent from the tracker
+		"""
 		return self.last_response_object
 
-	"""
-	Creates peer objects from the peer field (hex) of the response object
-	from the tracker
-	"""
+	
 	def populate_peers(self):
+		"""
+		Creates peer objects from the peer field (hex) of the response object
+		from the tracker
+		"""
 		if self.tracker_response["peers"] is None:
 			raise Exception("Peers not populated (check tracker response)")
 
@@ -348,23 +253,48 @@ class Torrent:
 				new_peer.initialize_with_chunk(peer_chunk)
 				self.peers.append(new_peer)
 
-			print (":".join(str(ord(x)) for x in self.tracker_response["peers"]))
-
-	"""
-	Chunks a bytestring into an array of (default) 6-byte pieces
-
-	Used for:
-		parsing bytestring for peers into individual peers
-	"""
+	
 	def chunk_bytestring(self, input, length=6):
-		if len(input) % length != 0:
+		"""
+		Chunks a bytestring into an array of (default) 6-byte pieces
+
+		Used for:
+			parsing bytestring for peers into individual peers
+	"""
+		if len(input) > 0 and len(input) % length != 0:
 			raise Exception(ERROR_BYTESTRING_CHUNKSIZE)
 		else:
 			return [input[x:x+length] for x in range(0, len(input), length)]
 
+	def connect_to_peer(self, peer):
+		""" Connect to a given peer using a TCP socket.
+
+		handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
+			:pstrlen -> length of pstr as a single raw byte
+			:pstr -> string identifier of the protocol
+			:reserved -> 8 reserved bits (all 0s)
+			:info_hash -> SHA1 of the info key
+			:peer_id -> client peer_id
+		"""
+		pstrlen = hex(len(PROTOCOL_STRING))[2:].decode("hex")
+		pstr = PROTOCOL_STRING.decode("hex")
+		reserved = hex(0)*8
+
+	def convert_int_to_hex(self, unencoded_input):
+		encoded = format(unencoded_input, "x")
+		length = len(encoded)
+		encoded = encoded.zfill(length+length%2)
+		return encoded.decode("hex")
+
 
 """
-Tests
+###############################################################################
+###############################################################################
+###############################################################################
+#################################### Tests ####################################
+###############################################################################
+###############################################################################
+###############################################################################
 """
 
 class TestTorrent(unittest.TestCase):
@@ -377,11 +307,13 @@ class TestTorrent(unittest.TestCase):
 		self.assertEqual(expected_url_hash, urllib.quote(text_hex_hash, safe="-_.!~*'()"))
 	
 	def test_metadate_from_file(self):
-		test_torrent = Torrent()
+		test_peer_id = "-Co0001-5208360bf90d"
+		test_port = 6881
 		root_dir = one_directory_back(os.getcwd())
 		test_data_directory = os.path.join(root_dir, "test_data/")
 		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
-		test_torrent.initialize_metadata_from_file(os.path.join(test_data_directory,test_torrent_file))
+		test_torrent_file_path = os.path.join(test_data_directory,test_torrent_file)
+		test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
 
 		expected_announce = "http://torrent.ubuntu.com:6969/announce"
 		expected_announce_list = [
@@ -405,32 +337,48 @@ class TestTorrent(unittest.TestCase):
 		self.assertEqual(expected_info_hash, test_torrent.generate_info_hash())
 
 	def test_tracker_request(self):
-		test_torrent = Torrent()
+		test_peer_id = "-Co0001-5208360bf90d"
+		test_port = 6881
 		root_dir = one_directory_back(os.getcwd())
 		test_data_directory = os.path.join(root_dir, "test_data/")
 		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
-		test_torrent.initialize_metadata_from_file(os.path.join(test_data_directory,test_torrent_file))
-
-		peer_id = "-Co0001-7a673c102d18"
-		port = 6881
-		test_torrent.intialize_for_tracker_requests(peer_id, port)
+		test_torrent_file_path = os.path.join(test_data_directory,test_torrent_file)
+		test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
 
 		expected_request = "http://torrent.ubuntu.com:6969/announce?info_h" + \
 		"ash=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&uploaded=0&dow" + \
 		"nloaded=0&event=started&compact=0&numwant=200&no_peer_id=0&port=6" + \
 		"881&peer_id=-Co0001-7a673c102d18&left=1593835520"
 
-		deluge_request = "http://torrent.ubuntu.com:6969/announce?info_has" + \
-		"h=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&peer_id=-DE13D0-" + \
-		"3qXsknyO08~0&port=55434&uploaded=0&downloaded=7189540&left=5504&c" + \
-		"orrupt=0&key=7BF44946&event=stopped&numwant=0&compact=1&no_peer_i" + \
-		"d=1&supportcrypto=1&redundant=0"
+		test_request = test_torrent.get_tracker_request()
+		
+		# remove the peer ids from both requests as they vary with each use
+		exp_peer_index = expected_request.index("&peer_id")
+		parsed_expected = expected_request[:exp_peer_index]+ \
+						expected_request[exp_peer_index+29:]
+		test_peer_index = test_request.index("&peer_id")
+		parsed_test = test_request[:test_peer_index]+ \
+					test_request[test_peer_index+29:]
 
-		self.assertEqual(expected_request, test_torrent.get_tracker_request())
+		# make sure we parsed correctly
+		correct_parsed_test = "http://torrent.ubuntu.com:6969/announce?inf" + \
+		"o_hash=%04%03%FBG(%BDx%8F%BC%B6~%87%D6%FE%B2A%EF8%C7Z&uploaded=0&" + \
+		"downloaded=0&event=started&compact=0&numwant=200&no_peer_id=0&por" + \
+		"t=6881&left=1593835520"
+		self.assertEqual(parsed_test, correct_parsed_test)
+		# compare our generated vs. expected
+		self.assertEqual(parsed_expected, parsed_test)
 
 	def test_chunk_bytestring(self):
+		test_peer_id = "-Co0001-5208360bf90d"
+		test_port = 6881
+		root_dir = one_directory_back(os.getcwd())
+		test_data_directory = os.path.join(root_dir, "test_data/")
+		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
+		test_torrent_file_path = os.path.join(test_data_directory,test_torrent_file)
+		test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
+
 		test_peer_chunk = u"N\xe6\xcd2\xc5DN\xe6\xcd2\xc5D"
-		test_torrent = Torrent()
 		expected_chunks = 2
 
 		self.assertEqual(expected_chunks, len(test_torrent.chunk_bytestring(test_peer_chunk)))
@@ -441,7 +389,53 @@ class TestTorrent(unittest.TestCase):
 		self.assertTrue(ERROR_BYTESTRING_CHUNKSIZE in context.exception)
 
 	def test_populate_peers(self):
-		pass
+		test_peer_id = "-Co0001-5208360bf90d"
+		test_port = 6881
+		root_dir = one_directory_back(os.getcwd())
+		test_data_directory = os.path.join(root_dir, "test_data/")
+		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
+		test_torrent_file_path = os.path.join(test_data_directory,test_torrent_file)
+		test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
+
+		test_tracker_response = {
+			'incomplete': 110, 
+			'min interval': None, 
+			'complete': 2957, 
+			'failure reason': None, 
+			'tracker id': None, 
+			'interval': 1800, 
+			'peers': u">\xd2\xf0\x9a\xceh\xa6F\xd3 \x1a\x90\x1f\xdc,\xb4" + \
+				u"\xc8\xd5\xd5B\x1c\xc8\xc8\xdcWa\x01\xfb\xc8\xd5%\xbbp" + \
+				u"\x9a\xc8\xd5^\x17\xdc\x8d\xd9\x03\xd1\x86_%\xc8\xd5\xb0" + \
+				u"\xd7\x1e\xb2\xc8\xd5\xc0\x83,\x11\xd9$\xb26\xa5\xe9\x1a" + \
+				u"\xe1\xb9A\x86Mb\xda\x8aD\x06\x0f\x1b\x15Og\xfa\x83M*Rd" + \
+				u"\xf8\n\xc8\xd5\\\x8d\x95\x80\xc8\xd5\x18q\x95S\xc8\xd5N" + \
+				u"\xc1X;\xe5\x05m\xbe/\xf2\xc8\xd5L\x1b>\x91\xc8\xd5\xb9" + \
+				u"\x15\xd9!\xf0\x90C\xbc\x00\xbd#'%\x8f\xfc\x88H\xb7\x88<" + \
+				u"\xab\xf1#'m|\t609%\x04\xec\x13\xc8\xd6M\xa4W>\xc0[\x88=|" + \
+				u"\xb9om.\xe4\xe7>\xc8\xd5\xa3\xac\xdb0\x1bW\xb9/\x85C<f" + \
+				u"\xb9-\xc3\xc3N'[M\x8c(\xc8\xd5\x96er\r\xdd\x0c%\xbbt8>" + \
+				u"\x9a\xad\xff\xf7r\xfa}\x95[YL\xc8\xd5\x05\t\x99\xd6\x1a" + \
+				u"\x89V\xab|6\xc3Pc\xc6\xabv\xef\xfa\xbc\x98`\x8dQ\xd4b" + \
+				u"\xdc\x0c\x8c\xc8\xd5\x9c\xc4\xd7\xcd\x1a\xe1%\xcc#\x86" + \
+				u"\xe3\x08U\x11\x1e\xcb\xee\x8dD\x8e%\x1f#'Ln\x85w\xf4)@[" + \
+				u"\x06\xf4\xc8\xd5L\x11)\xc9\xe0^D\xe6Bb\xc91", 
+				u'warning message': None}
+		test_torrent.tracker_response["peers"] = test_tracker_response["peers"]
+		test_torrent.populate_peers()
+		# check that the number of peers created == bytes / 6
+		self.assertEqual(len(test_tracker_response["peers"])/6, len(test_torrent.peers))
+
+	def test_convert_to_hex(self):
+		test_peer_id = "-Co0001-5208360bf90d"
+		test_port = 6881
+		root_dir = one_directory_back(os.getcwd())
+		test_data_directory = os.path.join(root_dir, "test_data/")
+		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
+		test_torrent_file_path = os.path.join(test_data_directory,test_torrent_file)
+		test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
+
+		self.assertEqual(test_torrent.convert_int_to_hex(19), "\x13")
 
 if __name__ == "__main__":
 	unittest.main()
