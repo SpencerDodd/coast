@@ -4,10 +4,10 @@ This class represents a peer
 """
 
 class Peer:
-	def __init__(self):
-		self.byte_string_chunk = None
+	def __init__(self, peer_chunk):
 		self.ip = ""
 		self.port = None
+		self.byte_string_chunk = self.initialize_with_chunk(peer_chunk)
 
 		# our control
 		self.am_choking = True
@@ -22,13 +22,14 @@ class Peer:
 		ip_chunk = byte_string_chunk[:4]
 		port_chunk = byte_string_chunk[4:]
 
-		for index,char in enumerate(ip_chunk):
+		for index, char in enumerate(ip_chunk):
 			if index != 3:
 				self.ip += str(ord(char)) + "."
 			else:
 				self.ip += str(ord(char))
 
 		self.port = ord(port_chunk[0]) * 256 + ord(port_chunk[1])
+		return byte_string_chunk
 
 
 	# -------------------------------------------------------------------------

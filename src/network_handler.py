@@ -2,7 +2,7 @@ import os
 import unittest
 import requests
 from torrent import Torrent
-from auxillarymethods import one_directory_back
+from helpermethods import one_directory_back
 """
 This is a handler for network requests and responses between the client,
 trackers, and peers.

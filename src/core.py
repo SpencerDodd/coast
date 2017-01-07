@@ -6,22 +6,23 @@ import unittest
 from torrent import Torrent
 
 # Client information
-CLIENT_ID_STRING = "Co"
+CLIENT_ID_STRING = "CO"
 CURRENT_VERSION = "0001"
 
 # Networking
-LISTENING_PORT = 6881 # usually 6881-6889
-
+LISTENING_PORT_MIN = 6881
+LISTENING_PORT_MAX = 6889
+MAX_CONNECTIONS = 4
 """
 This is the core of the torrent client.
 """
-class Client:
+class Core:
 	def __init__(self):
 		"""
 		Dictionary of active torrents
 		
 		Key value is the name of the torrent file
-		Value is a dict of info about the torrent file (tbd)
+		Value is a Torrent object
 		"""
 		self._active_torrents = {}
 		self._peer_id = self.generate_peer_id()
@@ -45,7 +46,7 @@ Tests
 
 class TestClient(unittest.TestCase):
 	def test_peer_id_generation(self):
-		test_client = Client()
+		test_client = Core()
 		test_client.generate_peer_id()
 		self.assertEquals(20, len(test_client._peer_id))
 
