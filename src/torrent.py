@@ -282,10 +282,6 @@ class Torrent:
         handshake_message = "{}{}{}{}{}".format(pstrlen, pstr, reserved, info_hash, peer_id)
         return handshake_message
 
-    def process_peer_data(self, data, ip, port):
-        """ Handles data that was sent back from a peer connection """
-        print ("Torrent received data from peer ({}: {}): {}".format(ip, port, data))
-
     def send_tracker_request(self):
         """ Sends the request to the tracker for the given torrent"""
         torrent_request = self.get_tracker_request()
@@ -300,6 +296,7 @@ class Torrent:
             self.connected_peers += 1
 
     def start_torrent(self):
+        """ Starts the torrent by connecting to the peers and running the twisted reactor"""
         self.send_tracker_request()
         self.connect_to_peers()
         reactor.run()
