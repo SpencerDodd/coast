@@ -7,7 +7,9 @@ class Peer:
 	def __init__(self, peer_chunk):
 		self.ip = ""
 		self.port = None
+		self.peer_id = None
 		self.byte_string_chunk = self.initialize_with_chunk(peer_chunk)
+		self.bitfield = None
 
 		# our control
 		self.am_choking = True

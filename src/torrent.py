@@ -10,6 +10,7 @@ from twisted.internet import reactor
 
 import constants
 from peer import Peer
+from messages import Handshake
 from protocols import PeerFactory
 from constants import PROTOCOL_STRING
 from helpermethods import one_directory_back, convert_int_to_hex
@@ -273,13 +274,10 @@ class Torrent:
             :info_hash -> SHA1 of the info key
             :peer_id -> client peer_id
         """
-        pstrlen = convert_int_to_hex(len(PROTOCOL_STRING))
-        pstr = PROTOCOL_STRING
-        reserved = convert_int_to_hex(0) * 8
         info_hash = self.generate_hex_info_hash()
         peer_id = self.peer_id
 
-        handshake_message = "{}{}{}{}{}".format(pstrlen, pstr, reserved, info_hash, peer_id)
+        handshake_message = Handshake(info_hash=info_hash, peer_id=peer_id).get_string()
         return handshake_message
 
     def send_tracker_request(self):
@@ -290,9 +288,9 @@ class Torrent:
 
     def connect_to_peers(self):
         """ Connects to the peers in the 'peers' field of the object"""
-        while self.connected_peers <= constants.MAX_PEERS:
+        while self.connected_peers < constants.MAX_PEERS:
             current_peer = self.peers[self.connected_peers]
-            reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, current_peer.ip, current_peer.port))
+            reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, current_peer))
             self.connected_peers += 1
 
     def start_torrent(self):
