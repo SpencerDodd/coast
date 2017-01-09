@@ -8,6 +8,9 @@ methods. One for creating a client handshake message to send to peers, and the o
 incoming peer handshakes into parsed and usable data by the client.
 """
 
+# TODO:: need to rework messages for handling incomplete data streams and appending data to
+# TODO::	partially complete messages
+
 
 class Handshake:
 	def __init__(self, info_hash=None, peer_id=None, data=None):
@@ -63,7 +66,7 @@ class Handshake:
 		Returns string of the handshake's variable data
 		:return: string
 		"""
-		return "HANDSHAKE\n\tpstrlen:{}\n\tpstr:{}\n\tres:{}\n\tinfo:{}\n\tpeer:{}\n\textra:{}".format(
+		return "HANDSHAKE\n\tpstrlen:{}\n\tpstr:{}\n\tres:{}\n\tinfo:{}\n\tpeer:{}\n\textra:\n\t\t{}".format(
 			ord(self.pstrlen),
 			self.pstr,
 			self.reserved,
@@ -90,17 +93,25 @@ class Message:
 		if len(data) == 0:
 			print ("No data given to Message constructor")
 		else:
-			self.len_prefix = int("".join(str(ord(c)) for c in data[0:4]))
+			self.raw = data
+			self.len_prefix = int(data[:4].encode("hex"), 16)
 			self.message_id = str(ord(data[4]))
-			self.payload = data[5:self.len_prefix]
-			self.leftover_data = data[self.len_prefix:]
+			self.payload = data[5:5+self.len_prefix]
+			self.leftover_data = data[5+self.len_prefix:]
 
 	def debug_values(self):
 		"""
 		Returns string of the message's variable data
 		:return: string
 		"""
-		return "MESSAGE:\n\tlen_prefix:{}\n\tmessage_id:{}\n\tpayload:{}\n\tleftover:{}".format(
+		return "MESSAGE:" + \
+			"\n\tRAW" + \
+			"\n\t\tlen_prefix (bytes = {}):{} ".format(len(self.raw[0:4]), "0x"+"0x".join(str(ord(c)) for c in self.raw[0:4])) + \
+			"\n\t\tmessage_id (bytes = {}):{}".format(len(self.raw[4]), "0x"+str(ord(self.raw[4]))) + \
+			"\n\t\tpayload (bytes = {}):{}".format(len(self.raw[5:5+self.len_prefix]), "0x" + "0x".join((str(ord(c)) for c in self.raw[5:5+self.len_prefix]))) + \
+			"\n\t\tleftover (bytes = {}):{}".format(len(self.raw[5+self.len_prefix:]), self.raw[5+self.len_prefix:]) + \
+			"\n\tSTRING" + \
+			"\n\t\tlen_prefix:{}\n\t\tmessage_id:{}\n\t\tpayload:{}\n\t\tleftover:{}".format(
 			self.len_prefix,
 			self.message_id,
 			self.payload,
@@ -142,3 +153,5 @@ class MessageTests(unittest.TestCase):
 				"-qB33A0-o-g04yzO(!.l"
 
 		self.assertEqual(expected_handshake_string, captured_handshake.get_string())
+
+
