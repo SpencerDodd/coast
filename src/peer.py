@@ -75,6 +75,10 @@ class Peer:
 		port = message.payload
 		print ("Peer <||{}||> has sent port {}".format(self.peer_id, port))
 
+	def process_extended_handshake(self, message):
+		extension = message.payload
+		print ("Peer <||{}||> has sent extension {}".format(self.peer_id, extension))
+
 """
 Tests
 """

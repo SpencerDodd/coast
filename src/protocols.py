@@ -1,6 +1,7 @@
 from twisted.internet.protocol import Protocol, ClientFactory
 
 from peer import Peer
+from messages import StreamProcessor
 from messages import Handshake
 from messages import Message
 
@@ -25,8 +26,11 @@ class PeerProtocol(Protocol):
 			"6": Peer.process_request,
 			"7": Peer.process_piece,
 			"8": Peer.process_cancel,
-			"9": Peer.process_port
+			"9": Peer.process_port,
+			"20":Peer.process_extended_handshake
 		}
+		self.stream_processor = StreamProcessor()
+		self.message_stack = []
 		self.actions = []
 
 	def connectionMade(self):
@@ -36,38 +40,34 @@ class PeerProtocol(Protocol):
 		self.transport.write(self.factory.torrent.get_handshake())
 
 	def dataReceived(self, data):
-		# TODO:: this should all be moved inside of self.process_stream()
-		if not self.handshake_exchanged:
-			try:
-				peer_shake = Handshake(data=data)
-				self.handshake_exchanged = True
-				self.peer.peer_id = peer_shake.peer_id
-				print ("Handshake exchange with peer <||{}||> ip: {} port: {}".format(
-					self.peer.peer_id, self.peer.ip, self.peer.port
-				))
-				print peer_shake.debug_values()
-
-				# TODO:: what to do with partial messages appended to handshake frame
-
-			except Exception as e:
-				print ("Handshake failure: {}".format(e.message))
-
-		else:
-			self.process_stream(data)
-			self.perform_actions_if_required()
+		self.process_stream(data)
+		self.perform_actions_if_required()
 
 	def process_stream(self, data):
 		# TODO:: this only works if all messages are sent in frame. Need to employ a stream
 		# TODO::	stack that parses messages out of the stream and holds the last partially
 		# TODO::	filled message for the next received message. Also needs to perform checks
 		# TODO::	to ensure that the next packet stream contains valid data for that message
+		self.stream_processor.parse_stream(data)
+		complete_messages = self.stream_processor.complete_messages
 
-		new_message = Message(data)
-		print ("Non-handshake message:\n{}".format(new_message.debug_values()))
+		for message in complete_messages:
+			print ("Message:\n{}".format(message.debug_values()))
+			if message.message_type == "Handshake":
+				self.peer.peer_id = message.peer_id
+				print ("Handshake exchange with peer <||{}||> ip: {} port: {}".format(
+					self.peer.peer_id, self.peer.ip, self.peer.port
+				))
 
-		# process the message based on the message_id of new_message
-		action = self.MESSAGE_ID[new_message.message_id]
-		action(self.peer, new_message)
+			else:
+				# add complete messages as actions for the peer
+				self.actions.append([self.MESSAGE_ID[message.message_id], self.peer, message])
+
+		if self.stream_processor.final_incomplete_message is not None:
+			print ("Incomplete: {}".format(self.stream_processor.final_incomplete_message.debug_values()))
+
+		# purge the completed messages
+		self.stream_processor.purge_complete_messages()
 
 	def perform_actions_if_required(self):
 		# TODO:: performs any actions as defined in the actions queue `self.actions` which is
