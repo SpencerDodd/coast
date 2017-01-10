@@ -30,8 +30,8 @@ class PeerProtocol(Protocol):
 			"20":Peer.process_extended_handshake
 		}
 		self.stream_processor = StreamProcessor()
-		self.message_stack = []
-		self.actions = []
+		self.client_actions = []
+		self.client_responses = []
 
 	def connectionMade(self):
 		print ("Connection made to peer ({}:{})".format(self.peer.ip, self.peer.port))
@@ -44,15 +44,13 @@ class PeerProtocol(Protocol):
 		self.perform_actions_if_required()
 
 	def process_stream(self, data):
-		# TODO:: this only works if all messages are sent in frame. Need to employ a stream
-		# TODO::	stack that parses messages out of the stream and holds the last partially
-		# TODO::	filled message for the next received message. Also needs to perform checks
-		# TODO::	to ensure that the next packet stream contains valid data for that message
+		# TODO:: first message after handshake should be `InterestedMessage` if we are indeed
+		# TODO::	interested in what the peer has (check client pieces?)
 		self.stream_processor.parse_stream(data)
 		complete_messages = self.stream_processor.complete_messages
 
 		for message in complete_messages:
-			print ("Message:\n{}".format(message.debug_values()))
+			# print ("Message:\n{}".format(message.debug_values()))
 			if message.message_type == "Handshake":
 				self.peer.peer_id = message.peer_id
 				print ("Handshake exchange with peer <||{}||> ip: {} port: {}".format(
@@ -61,7 +59,7 @@ class PeerProtocol(Protocol):
 
 			else:
 				# add complete messages as actions for the peer
-				self.actions.append([self.MESSAGE_ID[message.message_id], self.peer, message])
+				self.client_actions.append([self.MESSAGE_ID[message.message_id], self.peer, message])
 
 		if self.stream_processor.final_incomplete_message is not None:
 			print ("Incomplete: {}".format(self.stream_processor.final_incomplete_message.debug_values()))
@@ -70,14 +68,24 @@ class PeerProtocol(Protocol):
 		self.stream_processor.purge_complete_messages()
 
 	def perform_actions_if_required(self):
-		# TODO:: performs any actions as defined in the actions queue `self.actions` which is
-		# TODO::	a stack of a method, a peer, and a complete message.
-		for action in self.actions:
+		"""Performs any actions as defined in the actions queue `self.client_actions` which is
+		a stack of a method, a peer, and a complete message which are messages from the peer
+		to be executed by the client. It also sends any messages to the peer from the client
+		following client execution of peer messages that are found in the actions queue
+		`self.client_responses`. This action queue is populated by ..."""
+		# TODO:: figure out message response flow and the interaction between torrent and peer
+		# TODO::	in establishing what pieces to request from peer.
+
+		for action in self.client_actions:
 			method = action[0]
 			peer = action[1]
 			message = action[2]
 
 			method(peer, message)
+
+		# TODO:: figure out how the form of client responses and how to act on them
+		for response in self.client_responses:
+			pass
 
 
 class PeerFactory(ClientFactory):

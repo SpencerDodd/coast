@@ -10,6 +10,7 @@ from twisted.internet import reactor
 
 import constants
 from peer import Peer
+from piece import Piece
 from messages import Handshake
 from protocols import PeerFactory
 from constants import PROTOCOL_STRING
@@ -36,6 +37,8 @@ class Torrent:
 		self.peer_id = peer_id
 		self.port = port
 		self.torrent_file_path = torrent_file_path
+		self.torrent_name = None
+		self._announce = None
 
 		# Metadata fields
 		self.metadata = {
@@ -45,7 +48,9 @@ class Torrent:
 			"creation_date": None,
 			"comment": None,
 			"created_by": None,
-			"encoding": None
+			"encoding": None,
+			"piece_length": None,
+			"pieces": None
 		}
 
 		# Tracker request fields
@@ -88,11 +93,12 @@ class Torrent:
 		# Data fields
 		self.download_location = os.path.join(os.path.expanduser("~"), "Downloads/")
 		self.peers = []
+		self.pieces = {}
 
 		try:
 			self.initialize_metadata_from_file()
-		except:
-			raise Exception("Torrent file not valid")
+		except Exception as e:
+			raise Exception("Problem processing .torrent file\n{}".format(e.message))
 
 		# Initialize the tracker request fields
 		self.tracker_request["peer_id"] = peer_id
@@ -116,6 +122,14 @@ class Torrent:
 					# fill in our essential fields
 					self._announce = decoded_data["announce"]
 					self.metadata["info"] = decoded_data["info"]
+					self.metadata["piece_length"] = decoded_data["info"]["piece length"]
+					self.metadata["pieces"] = decoded_data["info"]["pieces"]
+					self.torrent_name = self.metadata["info"]["name"]
+					# set the download location to dir + name
+					os.path.join(self.download_location, self.torrent_name)
+
+					# initialize our pieces dict from the pieces string
+					self.initialize_pieces()
 
 					# fill in our optional fields if they exist
 					meta_keys = decoded_data.keys()
@@ -136,9 +150,23 @@ class Torrent:
 				error_message = "File is improperly formatted\n{}".format(traceback.format_exc(e))
 				raise ValueError(error_message)
 
-
 		else:
 			raise ValueError("File is not .torrent type")
+
+	def initialize_pieces(self):
+		"""
+		Initializes the pieces array from the .torrent file metadata. Slices the pieces string
+		into 20-byte segments that represent the SHA1-hash of the piece's data
+		"""
+		self.pieces = []
+		pieces = self.metadata["pieces"]
+		bytes_in_piece = self.metadata["piece_length"]
+		if pieces is not None and bytes_in_piece is not None:
+			for index, piece_hash in enumerate([pieces[x:x+20] for x in range(0, len(pieces), 20)]):
+				new_piece = Piece(bytes_in_piece, index, piece_hash, self.download_location)
+				self.pieces.append(new_piece)
+		else:
+			raise Exception("Torrent not initialized properly from file")
 
 	def can_request(self):
 		"""
@@ -292,12 +320,6 @@ class Torrent:
 			current_peer = self.peers[self.connected_peers]
 			reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, current_peer))
 			self.connected_peers += 1
-
-	def	get_next_message_for_peer(self, peer):
-		pass
-
-
-
 
 
 	def start_torrent(self):

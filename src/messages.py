@@ -56,6 +56,49 @@ class StreamProcessor:
 		self.complete_messages = []
 
 
+class Message:
+	def __init__(self, data=None):
+		self.is_complete = False
+		self.message_type = "Message"
+
+		if len(data) == 0:
+			print ("No data given to Message constructor")
+		else:
+			self.raw = data
+			self.len_prefix = int(data[:4].encode("hex"), 16)
+			self.message_id = str(ord(data[4]))
+			self.payload = data[5:5+self.len_prefix - 1]
+			self.leftover_data = data[5+self.len_prefix - 1:]
+
+			if len(self.payload) == self.len_prefix - 1:
+				self.is_complete = True
+
+	def complete_from_stream(self, data):
+		bytes_left_to_parse = self.len_prefix - len(self.payload)
+		self.payload += data[:bytes_left_to_parse]
+		self.leftover_data = data[bytes_left_to_parse:]
+		self.is_complete = True
+
+	def debug_values(self):
+		"""
+		Returns string of the message's variable data
+		:return: string
+		"""
+		return "MESSAGE:" + \
+			"\n\tRAW" + \
+			"\n\t\tlen_prefix (bytes = {}):{} ".format(len(self.raw[0:4]), "0x"+" 0x".join(str(ord(c)) for c in self.raw[0:4])) + \
+			"\n\t\tmessage_id (bytes = {}):{}".format(len(self.raw[4]), "0x"+str(ord(self.raw[4]))) + \
+			"\n\t\tpayload (bytes = {}):{}".format(len(self.payload), "0x" + " 0x".join((str(ord(c)) for c in self.payload))) + \
+			"\n\t\tleftover (bytes = {}): {}".format(len(self.raw[5+self.len_prefix:]), "0x"+" 0x".join(str(ord(c)) for c in self.raw[5+self.len_prefix:])) + \
+			"\n\tSTRING" + \
+			"\n\t\tlen_prefix:{}\n\t\tmessage_id:{}\n\t\tpayload:{}\n\t\tleftover:{}".format(
+			self.len_prefix,
+			self.message_id,
+			self.payload,
+			"".join(str(ord(c)) for c in self.leftover_data)
+		)
+
+
 class Handshake:
 	def __init__(self, info_hash=None, peer_id=None, data=None):
 		self.message_type = "Handshake"
@@ -125,47 +168,148 @@ class Handshake:
 		return output_string
 
 
-class Message:
-	def __init__(self, data=None):
-		self.is_complete = False
-		self.message_type = "Message"
+class ChokeMessage:
+	def __init__(self):
+		self.len = "\x00\x00\x00\x01"
+		self.id = "\x00"
 
-		if len(data) == 0:
-			print ("No data given to Message constructor")
-		else:
-			self.raw = data
-			self.len_prefix = int(data[:4].encode("hex"), 16)
-			self.message_id = str(ord(data[4]))
-			self.payload = data[5:5+self.len_prefix - 1]
-			self.leftover_data = data[5+self.len_prefix - 1:]
-
-			if len(self.payload) == self.len_prefix - 1:
-				self.is_complete = True
-
-	def complete_from_stream(self, data):
-		bytes_left_to_parse = self.len_prefix - len(self.payload)
-		self.payload += data[:bytes_left_to_parse]
-		self.leftover_data = data[bytes_left_to_parse:]
-		self.is_complete = True
-
-	def debug_values(self):
+	def message(self):
 		"""
-		Returns string of the message's variable data
-		:return: string
+		Gets the value of the choke message to send to the peer
+		:return: string of message
 		"""
-		return "MESSAGE:" + \
-			"\n\tRAW" + \
-			"\n\t\tlen_prefix (bytes = {}):{} ".format(len(self.raw[0:4]), "0x"+" 0x".join(str(ord(c)) for c in self.raw[0:4])) + \
-			"\n\t\tmessage_id (bytes = {}):{}".format(len(self.raw[4]), "0x"+str(ord(self.raw[4]))) + \
-			"\n\t\tpayload (bytes = {}):{}".format(len(self.payload), "0x" + " 0x".join((str(ord(c)) for c in self.payload))) + \
-			"\n\t\tleftover (bytes = {}): {}".format(len(self.raw[5+self.len_prefix:]), "0x"+" 0x".join(str(ord(c)) for c in self.raw[5+self.len_prefix:])) + \
-			"\n\tSTRING" + \
-			"\n\t\tlen_prefix:{}\n\t\tmessage_id:{}\n\t\tpayload:{}\n\t\tleftover:{}".format(
-			self.len_prefix,
-			self.message_id,
-			self.payload,
-			"".join(str(ord(c)) for c in self.leftover_data)
-		)
+		return "{}{}".format(self.len, self.id)
+
+
+class UnchokeMessage:
+	def __init__(self):
+		self.len = "\x00\x00\x00\x01"
+		self.id = "\x01"
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}".format(self.len, self.id)
+
+class InterestedMessage:
+	def __init__(self):
+		self.len = "\x00\x00\x00\x01"
+		self.id = "\x02"
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}".format(self.len, self.id)
+
+
+class NotInterestedMessage:
+	def __init__(self):
+		self.len = "\x00\x00\x00\x01"
+		self.id = "\x03"
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}".format(self.len, self.id)
+
+
+class HaveMessage:
+	def __init__(self, piece_index):
+		self.len = "\x00\x00\x00\x05"
+		self.id = "\x04"
+		self.payload = piece_index
+		if len(self.payload) > int(self.len.encode("hex", 16)) - 1:
+			raise Exception("Payload does not match declared message length")
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}{}".format(self.len, self.id, self.payload)
+
+class BitfieldMessage:
+	def __init__(self, bitfield):
+		self.len = convert_int_to_hex(1+len(bitfield))
+		self.id = "\x05"
+		self.payload = bitfield
+		if len(self.payload) > int(self.len.encode("hex", 16)) - 1:
+			raise Exception("Payload does not match declared message length")
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}{}".format(self.len, self.id, self.payload)
+
+
+class RequestMessage:
+	def __init__(self, index, begin, length):
+		self.len = "\x00\x00\x00\x0d"
+		self.id = "\x06"
+		self.index = index
+		self.begin = begin
+		self.length = length
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}{}{}{}".format(self.len, self.id, self.index, self.begin, self.length)
+
+
+class PieceMessage:
+	def __init__(self, index, begin, block):
+		self.len = convert_int_to_hex(9+len(block))
+		self.id = "\x07"
+		self.index = index
+		self.begin = begin
+		self.block = block
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}{}{}{}".format(self.len, self.id, self.index, self.begin, self.block)
+
+
+class CancelMessage:
+	def __init__(self, index, begin, length):
+		self.len = "\x00\x00\x00\x0d"
+		self.id = "\x08"
+		self.index = index
+		self.begin = begin
+		self.length = length
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}{}{}{}".format(self.len, self.id, self.index, self.begin, self.length)
+
+
+class PortMessage:
+	def __init__(self, listen_port):
+		self.len = "\x00\x00\x00\x0d"
+		self.id = "\x06"
+		self.listen_port = listen_port
+
+	def message(self):
+		"""
+		Gets the value of the choke message to send to the peer
+		:return: string of message
+		"""
+		return "{}{}{}".format(self.len, self.id, self.listen_port)
 
 
 class MessageTests(unittest.TestCase):

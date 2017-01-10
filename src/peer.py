@@ -58,6 +58,7 @@ class Peer:
 
 	def process_bitfield(self, message):
 		print ("Processing bitfield from peer <||{}||>".format(self.peer_id))
+		self.bitfield = message.payload
 
 	def process_request(self, message):
 		piece = message.payload
