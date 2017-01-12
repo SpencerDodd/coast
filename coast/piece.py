@@ -18,9 +18,9 @@ class Piece:
 
 		for x in range(0, self.piece_length):
 			self.data.append(0)
-		self.print_initialization()
+		# self.debug_string()
 
-	def print_initialization(self):
+	def debug_string(self):
 
 		output_string = "Creating new piece from:" + \
 			"STRING" + \
@@ -32,6 +32,13 @@ class Piece:
 			"\n\tdata: {}".format(self.data)
 
 		print (output_string)
+
+	def get_next_begin(self):
+		"""
+		Gets the next index for a request to be sent to a remote peer for download
+		:return: int representing index to be requested
+		"""
+		return self.data.index(0)
 
 	def write_to_temporary_storage(self):
 		if not self.is_complete:
@@ -58,5 +65,3 @@ class Piece:
 
 	def data_matches_hash(self):
 		return hashlib.sha1(self.data) == self.hash
-
-	# TODO: tests

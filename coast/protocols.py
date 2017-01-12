@@ -2,8 +2,6 @@ from twisted.internet.protocol import Protocol, ClientFactory
 
 from peer import Peer
 from messages import StreamProcessor
-from messages import InterestedMessage
-from messages import Message
 
 """
 This file defines the coast TCP implementation of the BitTorrent protocol in interacting with
@@ -79,7 +77,7 @@ class PeerProtocol(Protocol):
 		`self.client_responses`. This action queue is populated by ..."""
 		# TODO:: figure out message response flow and the interaction between torrent and peer
 		# 			in establishing what pieces to request from peer.
-
+		print ("Processing received messages in Peer")
 		for action in self.received_message_actions:
 			method = action[0]
 			peer = action[1]
@@ -88,16 +86,19 @@ class PeerProtocol(Protocol):
 			method(peer, message)
 
 		# TODO:: figure out how the form of client responses and how to act on them
+		print ("Checking on Torrent to see how to proceed")
 		self.factory.torrent.process_next_round(self.peer)
 
-		# if the peer isn't interested yet, get interested
-		if self.peer.am_interested != 1:
-			# TODO: should handle outgoing message creation and updating through peer methods
-			self.outgoing_messages.append(InterestedMessage())
-			self.peer.am_interested = 1
+		# we get our next messages from peer
+		self.outgoing_messages += self.peer.get_next_messages()
 
+		# send them and update the last time of contact for the peer (for keep-alive)
+		print ("outgoing: {}".format(self.outgoing_messages))
 		for outgoing_message in self.outgoing_messages:
 			self.transport.write(outgoing_message.message())
+			self.peer.update_last_contact()
+
+		# print (self.peer.status())
 
 
 class PeerFactory(ClientFactory):

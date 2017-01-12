@@ -30,23 +30,3 @@ class Core:
 		peer_id_sub = pre_versioned_peer_id[28:]
 		
 		return "-{}{}-{}".format(CLIENT_ID_STRING,CURRENT_VERSION,peer_id_sub)
-
-"""
-Tests
-"""
-
-
-class TestClient(unittest.TestCase):
-	def test_peer_id_generation(self):
-		test_client = Core()
-		test_client.generate_peer_id()
-		self.assertEquals(20, len(test_client._peer_id))
-
-if __name__ == "__main__":
-	unittest.main()
-
-
-
-
-
-
