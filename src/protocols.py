@@ -2,7 +2,7 @@ from twisted.internet.protocol import Protocol, ClientFactory
 
 from peer import Peer
 from messages import StreamProcessor
-from messages import Handshake
+from messages import InterestedMessage
 from messages import Message
 
 """
@@ -27,11 +27,11 @@ class PeerProtocol(Protocol):
 			"7": Peer.process_piece,
 			"8": Peer.process_cancel,
 			"9": Peer.process_port,
-			"20":Peer.process_extended_handshake
+			"20": Peer.process_extended_handshake
 		}
 		self.stream_processor = StreamProcessor()
-		self.client_actions = []
-		self.client_responses = []
+		self.received_message_actions = []
+		self.outgoing_messages = []
 
 	def connectionMade(self):
 		print ("Connection made to peer ({}:{})".format(self.peer.ip, self.peer.port))
@@ -45,7 +45,7 @@ class PeerProtocol(Protocol):
 
 	def process_stream(self, data):
 		# TODO:: first message after handshake should be `InterestedMessage` if we are indeed
-		# TODO::	interested in what the peer has (check client pieces?)
+		# 			interested in what the peer has (check client pieces?)
 		self.stream_processor.parse_stream(data)
 		complete_messages = self.stream_processor.complete_messages
 
@@ -59,7 +59,11 @@ class PeerProtocol(Protocol):
 
 			else:
 				# add complete messages as actions for the peer
-				self.client_actions.append([self.MESSAGE_ID[message.message_id], self.peer, message])
+				self.received_message_actions.append([
+					self.MESSAGE_ID[message.message_id],
+					self.peer,
+					message]
+				)
 
 		if self.stream_processor.final_incomplete_message is not None:
 			print ("Incomplete: {}".format(self.stream_processor.final_incomplete_message.debug_values()))
@@ -74,9 +78,9 @@ class PeerProtocol(Protocol):
 		following client execution of peer messages that are found in the actions queue
 		`self.client_responses`. This action queue is populated by ..."""
 		# TODO:: figure out message response flow and the interaction between torrent and peer
-		# TODO::	in establishing what pieces to request from peer.
+		# 			in establishing what pieces to request from peer.
 
-		for action in self.client_actions:
+		for action in self.received_message_actions:
 			method = action[0]
 			peer = action[1]
 			message = action[2]
@@ -84,8 +88,16 @@ class PeerProtocol(Protocol):
 			method(peer, message)
 
 		# TODO:: figure out how the form of client responses and how to act on them
-		for response in self.client_responses:
-			pass
+		self.factory.torrent.process_next_round(self.peer)
+
+		# if the peer isn't interested yet, get interested
+		if self.peer.am_interested != 1:
+			# TODO: should handle outgoing message creation and updating through peer methods
+			self.outgoing_messages.append(InterestedMessage())
+			self.peer.am_interested = 1
+
+		for outgoing_message in self.outgoing_messages:
+			self.transport.write(outgoing_message.message())
 
 
 class PeerFactory(ClientFactory):
@@ -104,6 +116,7 @@ class PeerFactory(ClientFactory):
 
 	def clientConnectionLost(self, connector, reason):
 		print ("Lost connection to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))
+		self.torrent.remove_active_peer(self.peer)
 
 	def clientConnectionFailed(self, connector, reason):
 		print ("Connection failed to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))

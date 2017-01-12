@@ -7,18 +7,20 @@ This class represents a piece of a torrent downloaded from a peer.
 
 
 class Piece:
-	def __init__(self, piece_length, index, hash, download_location, data=None):
+	def __init__(self, piece_length, index, hash, download_location):
 		self.piece_length = piece_length
 		self.index = index
 		self.hash = hash
 		self.temp_location = os.path.join(download_location, "tmp", "{}.piece".format(str(self.index)))
-		self.data = data
+		self.data = []
+		self.progress = 0.0
 		self.is_complete = False
 
+		for x in range(0, self.piece_length):
+			self.data.append(0)
 		self.print_initialization()
 
 	def print_initialization(self):
-		pass
 
 		output_string = "Creating new piece from:" + \
 			"STRING" + \
@@ -26,6 +28,7 @@ class Piece:
 			"\n\tindex: {}".format(self.index) + \
 			"\n\thash (bytes = {}): {}".format(len(self.hash), self.hash) + \
 			"\n\ttemp_location = {}".format(self.temp_location) + \
+			"\n\tprogress = {}".format(self.progress) + \
 			"\n\tdata: {}".format(self.data)
 
 		print (output_string)
@@ -41,15 +44,19 @@ class Piece:
 		# delete data from piece to conserve program memory
 		self.data = None
 
-	# TODO:: Need to keep in mind that blocks inside the piece can be requested out of order.
-	# TODO::
-	def append_data(self, data):
-		if len(self.data) + len(data) > self.piece_length:
-			print ("Cannot append data to piece ({}). Overflow".format(self.index))
-		else:
-			self.data += data
-			if len(self.data) == self.piece_length:
-				self.is_complete = True
+	def update_progress(self):
+		self.progress = ((len(self.data) - self.data.count(0)) / float(len(self.data))) * 100
+
+		if int(self.progress) == 100: # TODO: ensure conversion isn't dangerous
+			self.is_complete = True
+
+	def append_data(self, piece_message):
+		for x in range(0, len(piece_message.block)):
+			self.data[piece_message.index + x] = piece_message.block[x]
+
+		self.update_progress()
 
 	def data_matches_hash(self):
 		return hashlib.sha1(self.data) == self.hash
+
+	# TODO: tests

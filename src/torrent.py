@@ -89,11 +89,13 @@ class Torrent:
 		self.event_set = False
 		self.last_response_object = None
 		self.connected_peers = 0
+		self.active_peers = []
 
 		# Data fields
 		self.download_location = os.path.join(os.path.expanduser("~"), "Downloads/")
 		self.peers = []
-		self.pieces = {}
+		self.pieces = []
+		self.pieces_hashes = []
 
 		try:
 			self.initialize_metadata_from_file()
@@ -157,16 +159,13 @@ class Torrent:
 		"""
 		Initializes the pieces array from the .torrent file metadata. Slices the pieces string
 		into 20-byte segments that represent the SHA1-hash of the piece's data
+
+		Also sets self.pieces as a bitfield array for tracking download progress
 		"""
-		self.pieces = []
-		pieces = self.metadata["pieces"]
-		bytes_in_piece = self.metadata["piece_length"]
-		if pieces is not None and bytes_in_piece is not None:
-			for index, piece_hash in enumerate([pieces[x:x+20] for x in range(0, len(pieces), 20)]):
-				new_piece = Piece(bytes_in_piece, index, piece_hash, self.download_location)
-				self.pieces.append(new_piece)
-		else:
-			raise Exception("Torrent not initialized properly from file")
+		self.pieces_hashes = [self.metadata["pieces"][x:x+20] for x in range(0, len(self.metadata["pieces"]) / 20)]
+
+		for x in range(0, (len(self.metadata["info"]["pieces"]) / 20 / 8)):
+			self.pieces.append(0)
 
 	def can_request(self):
 		"""
@@ -319,8 +318,8 @@ class Torrent:
 		while self.connected_peers < constants.MAX_PEERS:
 			current_peer = self.peers[self.connected_peers]
 			reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, current_peer))
+			self.active_peers.append(current_peer)
 			self.connected_peers += 1
-
 
 	def start_torrent(self):
 		""" Starts the torrent by connecting to the peers and running the twisted reactor"""
@@ -328,6 +327,44 @@ class Torrent:
 		self.connect_to_peers()
 		reactor.run()
 
+	def remove_active_peer(self, peer):
+		"""
+		Removes a peer from the torrent's peer list
+		:param peer: Peer to be removed
+		:return: void
+		"""
+		print ("Removing peer from active list <<||{}||>>".format(peer.peer_id))
+		self.active_peers.remove(peer)
+
+	def process_next_round(self, peer):
+		"""
+		The main processing step after a peer has performed some actions. Need to check and see
+		if the peer has any data to process, or if we need to send a response to the peer in the
+		form of a message to be sent.
+
+		:return:
+		"""
+		if peer.current_piece is not None and peer.current_piece.is_complete:
+			self.save_completed_peer_piece_to_disk(peer.get_next_piece())
+			peer.set_piece(self.get_next_piece_for_download())
+
+	def save_completed_peer_piece_to_disk(self, piece_to_save):
+		"""
+		Iterates through peers and takes completed pieces from them with the peer method for saving
+		a piece and updates the pieces array by flipping the bit at the given index of the piece
+		to 1.
+
+		:param piece_to_save:
+		:return:
+		"""
+		pass
+
+	def get_next_piece_for_download(self):
+		# TODO: make sure the peer has the piece before sending a request for it
+		next_index = self.pieces.index(0)
+		next_hash = self.pieces_hashes[next_index]
+		next_piece = Piece(self.metadata["piece_length"], next_index, next_hash, self.download_location)
+		return next_piece
 
 """
 ###############################################################################

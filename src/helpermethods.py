@@ -16,10 +16,22 @@ def one_directory_back(current_directory):
 
 
 def convert_int_to_hex(unencoded_input):
-	""" Converts and integer into its hex representation """
-
+	"""
+	Converts an integer to hexadecimal. Safer than hex(integer) call.
+	:param unencoded_input: integer
+	:return: hex-encoded output
+	"""
 	encoded = format(unencoded_input, "x")
 	length = len(encoded)
 	encoded = encoded.zfill(length + length % 2)
 	return encoded.decode("hex")
+
+
+def convert_hex_to_int(unencoded_input):
+	"""
+	Converts hex stream input into integer representation
+	:param unencoded_input: hex input
+	:return: integer representation of input
+	"""
+	return int(unencoded_input.encode("hex"), 16)
 
