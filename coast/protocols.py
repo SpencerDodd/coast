@@ -1,5 +1,5 @@
 from twisted.internet.protocol import Protocol, ClientFactory
-
+from twisted.python.failure import Failure
 from peer import Peer
 from messages import StreamProcessor
 
@@ -14,21 +14,7 @@ class PeerProtocol(Protocol):
 		self.factory = factory
 		self.peer = peer
 		self.handshake_exchanged = False
-		self.MESSAGE_ID = {
-			"0": Peer.process_choke,
-			"1": Peer.process_unchoke,
-			"2": Peer.process_interested,
-			"3": Peer.process_not_interested,
-			"4": Peer.process_have,
-			"5": Peer.process_bitfield,
-			"6": Peer.process_request,
-			"7": Peer.process_piece,
-			"8": Peer.process_cancel,
-			"9": Peer.process_port,
-			"20": Peer.process_extended_handshake
-		}
-		self.stream_processor = StreamProcessor()
-		self.received_message_actions = []
+		self.stream_processor = StreamProcessor(self.factory.torrent.bitfield)
 		self.outgoing_messages = []
 
 	def connectionMade(self):
@@ -39,48 +25,31 @@ class PeerProtocol(Protocol):
 
 	def dataReceived(self, data):
 		self.process_stream(data)
-		self.perform_actions_if_required()
+		self.send_next_messages()
 
 	def process_stream(self, data):
 		self.stream_processor.parse_stream(data)
-		complete_messages = self.stream_processor.complete_messages
-
-		for message in complete_messages:
-			# print ("Message:\n{}".format(message.debug_values()))
-			if message.message_type == "Handshake":
-				self.peer.peer_id = message.peer_id
-				print ("Handshake exchange with peer <||{}||> ip: {} port: {}".format(
-					self.peer.peer_id, self.peer.ip, self.peer.port
-				))
-
-			else:
-				# add complete messages as actions for the peer
-				self.received_message_actions.append([
-					self.MESSAGE_ID[message.message_id],
-					self.peer,
-					message]
-				)
-
+		self.peer.received_messages(self.stream_processor.complete_messages)
 		if self.stream_processor.final_incomplete_message is not None:
-			print ("Incomplete: {}".format(self.stream_processor.final_incomplete_message.debug_values()))
+			print ("Incomplete")
 
 		# purge the completed messages
 		self.stream_processor.purge_complete_messages()
 
-	def perform_actions_if_required(self):
+	def send_next_messages(self):
 		"""Performs any actions as defined in the actions queue `self.client_actions` which is
 		a stack of a method, a peer, and a complete message which are messages from the peer
 		to be executed by the client. It also sends any messages to the peer from the client
 		following client execution of peer messages that are found in the actions queue
 		`self.client_responses`. This action queue is populated by ..."""
 
-		print ("Processing received messages in Peer")
-		for action in self.received_message_actions:
-			method = action[0]
-			peer = action[1]
-			message = action[2]
-
-			method(peer, message)
+		"""
+		If handshaking has occurred, check to see if the given matches the torrent. If not,
+		terminate the connection
+		"""
+		if self.handshake_exchanged:
+			if self.peer.info_hash != self.factory.torrent.generate_hex_info_hash():
+				self.connectionLost(reason=Failure("Peer info hash did not match torrent info hash"))
 
 		print ("Checking on Torrent to see how to proceed")
 		self.factory.torrent.process_next_round(self.peer)
@@ -89,12 +58,11 @@ class PeerProtocol(Protocol):
 		self.outgoing_messages += self.peer.get_next_messages()
 
 		# send them and update the last time of contact for the peer (for keep-alive)
-		print ("outgoing: {}".format(self.outgoing_messages))
 		for outgoing_message in self.outgoing_messages:
 			self.transport.write(outgoing_message.message())
 			self.peer.update_last_contact()
 
-		# print (self.peer.status())
+		self.outgoing_messages = []
 
 
 class PeerFactory(ClientFactory):

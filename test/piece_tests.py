@@ -3,10 +3,11 @@ import unittest
 
 from coast.piece import Piece
 from coast.torrent import Torrent
-from coast.messages import PieceMessage
+from coast.messages import PieceMessage, RequestMessage
 from coast.helpermethods import one_directory_back
+from coast.constants import REQUEST_SIZE
 
-from test.test_data import test_broken_piece_message, test_piece_message
+from test.test_data import test_first_piece_message, test_piece_message
 
 
 class PieceTests(unittest.TestCase):
@@ -25,12 +26,12 @@ class PieceTests(unittest.TestCase):
 		test_piece_hash = test_torrent.pieces_hashes[test_piece_index]
 		test_download_location = test_torrent.download_location
 
-		test_piece_block = PieceMessage(data=test_piece_message)
+		test_piece_block = PieceMessage(index=0, begin=0, block=("A"*REQUEST_SIZE))
 		test_piece = Piece(test_piece_size, test_piece_index, test_piece_hash, test_download_location)
+		test_request = RequestMessage(index=test_piece_block.get_index(),
+									  begin=test_piece_block.get_begin())
+		test_piece.add_non_completed_request_index(test_request)
 		self.assertEqual(0.0, test_piece.progress)
-		test_piece.append_data(test_piece_block)
-		self.assertEqual(3.125, test_piece.progress)
-		# check to ensure that overwriting doesn't change progress
 		test_piece.append_data(test_piece_block)
 		self.assertEqual(3.125, test_piece.progress)
 		# check to see if our bytes were downloaded

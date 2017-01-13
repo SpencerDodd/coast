@@ -1,8 +1,11 @@
 import time
 import unittest
 from helpermethods import convert_hex_to_int, indent_string
-from messages import Message, PieceMessage, InterestedMessage, RequestMessage, BitfieldMessage
+from messages import ChokeMessage, UnchokeMessage, InterestedMessage, InterestedMessage, \
+	PieceMessage, HaveMessage, RequestMessage, BitfieldMessage, HandshakeMessage
 from bitarray import bitarray
+from constants import MAX_OUTSTANDING_REQUESTS
+
 """
 This class represents a peer
 """
@@ -13,10 +16,29 @@ class Peer:
 		self.ip = ""
 		self.port = None
 		self.peer_id = None
+		self.info_hash = None
 		self.byte_string_chunk = self.initialize_with_chunk(peer_chunk)
 		self.bitfield = bitarray(endian="big")
+		# TODO: request queue where non-responded requests wait until they receive a PieceMessage
+		# 		that satisfies the requested piece.
+		self.MESSAGE_ID = {
+			0: Peer.process_choke_message,
+			1: Peer.process_unchoke_message,
+			2: Peer.process_interested_message,
+			3: Peer.process_not_interested_message,
+			4: Peer.process_have_message,
+			5: Peer.process_bitfield_message,
+			6: Peer.process_request_message,
+			7: Peer.process_piece_message,
+			8: Peer.process_cancel_message,
+			9: Peer.process_port_message,
+			19: Peer.process_handshake_message,
+			20: Peer.process_extended_handshake_message,
+			225: Peer.process_keep_alive_message
+		}
 		self.received_message_buffer = []
-		self.outgoing_message_buffer = []
+		self.request_buffer = []
+		self.last_request = None
 		self.time_since_last_message = None
 
 		# for interaction with Torrent object
@@ -58,41 +80,51 @@ class Peer:
 		:return: string
 		"""
 		if self.current_piece is None:
-			status_string = "-"*40 + \
-				"\nStatus of peer <<||{}||>>".format(self.peer_id) + \
-				"\n\tip: {}".format(self.ip) + \
-				"\n\tport: {}".format(self.port) + \
-				"\n\tbitfield: {}".format(self.bitfield) + \
-				"\n\treceived messages: {}".format("\n\t".join(str(a) for a in self.received_message_buffer)) + \
-				"\n\toutgoing messages: {}".format("\n\t".join(str(a) for a in self.outgoing_message_buffer)) + \
-				"\n\ttime since last message: {}".format(self.time_since_last_message) + \
-				"\n\tpiece: {}".format(self.current_piece) + \
-				"\n\tam choking: {}".format(self.am_choking) + \
-				"\n\tam interested: {}".format(self.am_interested) + \
-				"\n\tpeer choking: {}".format(self.peer_choking) + \
-				"\n\tpeer interested: {}".format(self.peer_interested) + \
-				"\n"+"-"*40
+			status_string = "-" * 40 + \
+							"\nStatus of peer ({})".format(self.peer_id) + \
+							"\n\tip: {}".format(self.ip) + \
+							"\n\tport: {}".format(self.port) + \
+							"\n\tbitfield: {}".format(self.bitfield) + \
+							"\n\treceived messages: {}".format(
+								"\n\t".join(str(a) for a in self.received_message_buffer)) + \
+							"\n\ttime since last message: {}".format(self.time_since_last_message) + \
+							"\n\tpiece: {}".format(self.current_piece) + \
+							"\n\tam choking: {}".format(self.am_choking) + \
+							"\n\tam interested: {}".format(self.am_interested) + \
+							"\n\tpeer choking: {}".format(self.peer_choking) + \
+							"\n\tpeer interested: {}".format(self.peer_interested) + \
+							"\n" + "-" * 40
 
 			return status_string
 		else:
-			status_string = "-"*40 + \
-				"\nStatus of peer <<||{}||>>".format(self.peer_id) + \
-				"\n\tip: {}".format(self.ip) + \
-				"\n\tport: {}".format(self.port) + \
-				"\n\tbitfield: {}".format(self.bitfield) + \
-				"\n\treceived messages: {}".format(
-					"\n\t".join(str(a) for a in self.received_message_buffer)) + \
-				"\n\toutgoing messages: {}".format(
-					"\n\t".join(a.debug_values() for a in self.outgoing_message_buffer)) + \
-				"\n\ttime since last message: {}".format(self.time_since_last_message) + \
-				"\n\tpiece: \n{}".format(indent_string(self.current_piece.debug_values(), 2)) + \
-				"\n\tam choking: {}".format(self.am_choking) + \
-				"\n\tam interested: {}".format(self.am_interested) + \
-				"\n\tpeer choking: {}".format(self.peer_choking) + \
-				"\n\tpeer interested: {}".format(self.peer_interested) + \
-				"\n"+"-"*40
+			status_string = "-" * 40 + \
+							"\nStatus of peer ({})".format(self.peer_id) + \
+							"\n\tip: {}".format(self.ip) + \
+							"\n\tport: {}".format(self.port) + \
+							"\n\tbitfield: {}".format(self.bitfield) + \
+							"\n\treceived messages: {}".format(
+								"\n\t".join(str(a) for a in self.received_message_buffer)) + \
+							"\n\toutgoing messages: {}".format(
+								"\n\t".join(
+									a.debug_values() for a in self.outgoing_message_buffer)) + \
+							"\n\ttime since last message: {}".format(self.time_since_last_message) + \
+							"\n\tpiece: \n{}".format(
+								indent_string(self.current_piece.debug_values(), 2)) + \
+							"\n\tam choking: {}".format(self.am_choking) + \
+							"\n\tam interested: {}".format(self.am_interested) + \
+							"\n\tpeer choking: {}".format(self.peer_choking) + \
+							"\n\tpeer interested: {}".format(self.peer_interested) + \
+							"\n" + "-" * 40
 
 			return status_string
+
+	def received_messages(self, messages):
+		"""
+		Processes each of the received messages.
+		:param messages: Array of received messages from StreamProcessor
+		"""
+		for message in messages:
+			self.MESSAGE_ID[message.get_message_id()](self, message)
 
 	def get_next_messages(self):
 		"""
@@ -110,30 +142,59 @@ class Peer:
 		# 		is the same as the last request. If they are the same, don't add another identical
 		# 		request to the queue. Hold off until the last request has been met, then add the
 		# 		next to the queue.
+		#
+		# 		However, we need to think about re-requests for data that arrived corrupted.
+		# 		Maybe we see if a response is a response that is formatted for the given request,
+		# 		if so and it takes care of that request, then we send a new request for the next
+		# 		block. Otherwise, we discard the data and resend a request. If a peer sends a
+		# 		number of failed PieceMessages for a specific request, we blacklist that piece for
+		# 		this peer and try another one. If a peer fails too many requests, then we
+		# 		drop the peer from active connections (maybe blacklist temporarily inside Torrent),
+		# 		and spin up a new peer (in Torrent).
+
+		# TODO: make sure only constants.MAX_OUTSTANDING_REQUESTS are allowed in the request
+		# 		buffer.
+		# TODO: if peer is choking, it looks like they miss the first message maybe
 
 		print ("Getting next messages ...")
-		print ("Outgoing: {}".format("\n".join(indent_string(str(a), 1) for a in self.outgoing_message_buffer)))
 		print ("Removing previous outgoing messages")
-		self.outgoing_message_buffer = []
-		print ("Outgoing: {}".format(
-			"\n".join(indent_string(str(a), 1) for a in self.outgoing_message_buffer)))
-		print ("Outgoing is empty: ({})".format(0 == len(self.outgoing_message_buffer)))
+		outgoing_message_buffer = []
+		print "Received: {}".format(
+			"\n".join(indent_string(str(a), 1) for a in self.received_message_buffer)
+		)
+		print "Requests: {}".format(",".join(
+			"{}:{}:{}".format(
+				a.get_message_id(),
+				a.get_index(),
+				a.get_begin(),
+				a.get_len_prefix()
+			) for a in self.request_buffer))
 
 		if self.am_interested == 0:
 			print ("Adding Interested to outgoing messages")
-			self.outgoing_message_buffer.append(InterestedMessage())
+			outgoing_message_buffer.append(InterestedMessage())
 			self.am_interested = 1
-		elif self.current_piece is not None and not self.current_piece.is_complete:
-			# class PieceMessage(Message):
-			# 	def __init__(self, index=None, begin=None, block=None, data=None):
-			next_begin = self.current_piece.get_next_begin()
-			# class RequestMessage(Message):
-			# 	def __init__(self, index=None, begin=None, data=None):
-			next_request = RequestMessage(index=self.current_piece.index, begin=next_begin)
-			print ("Adding Request to outgoing messages")
-			self.outgoing_message_buffer.append(next_request)
 
-		return self.outgoing_message_buffer
+		# if we have an assigned piece that is not finished, and we haven't sent out the maximum
+		# 	number of requests yet: add a new request to our request buffer
+		elif self.current_piece is not None and not self.current_piece.is_complete and \
+						len(self.request_buffer) <= MAX_OUTSTANDING_REQUESTS:
+
+			next_begin = self.current_piece.get_next_begin()
+			next_request = RequestMessage(index=self.current_piece.index, begin=next_begin)
+
+			if not self.current_piece.non_completed_request_exists(next_request):
+				print ("Adding new request to outgoing messages")
+				outgoing_message_buffer.append(next_request)
+				self.request_buffer.append(next_request)
+				self.current_piece.add_non_completed_request_index(next_request)
+			else:
+				print ("New request already exists")
+		else:
+			print ("No request to be sent (piece not assigned, piece complete, or"
+				   "maximum number of requests already out.")
+
+		return outgoing_message_buffer
 
 	def received_bitfield(self):
 		return len(self.bitfield.tolist()) > 0
@@ -154,7 +215,7 @@ class Peer:
 		"""
 		return self.current_piece.is_complete()
 
-	def get_next_piece(self, next_piece):
+	def set_next_piece(self, next_piece):
 		"""
 		Sets the current piece to the given next piece and returns the previous current piece
 		to be saved to disk by the torrent.
@@ -181,33 +242,49 @@ class Peer:
 	def set_piece(self, piece):
 		self.current_piece = piece
 
-	def process_choke(self, message):
-		self.received_message_buffer.append(message)
-		print ("Choked by peer <||{}||>".format(self.peer_id))
+	"""
+	///////////////////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	///////////////////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	||||||||||||||||||||||||||||||||||||| MESSAGE PROCESSING |||||||||||||||||||||||||||||||||||||
+	\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\///////////////////////////////////////////////
+	\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\///////////////////////////////////////////////
+	"""
+	def process_handshake_message(self, message):
+		new_handshake_message = HandshakeMessage(data=message.raw)
+		self.received_message_buffer.append(new_handshake_message)
+		self.peer_id = new_handshake_message.get_peer_id()
+		self.info_hash = new_handshake_message.get_info_hash()
+		print ("Handshake received from peer ({})".format(self.peer_id))
+
+	def process_choke_message(self, message):
+		new_choke_message = ChokeMessage(data=message.raw)
+		self.received_message_buffer.append(new_choke_message)
+		print ("Choked by peer ({})".format(self.peer_id))
 		self.peer_choking = 1
 
-	def process_unchoke(self, message):
-		self.received_message_buffer.append(message)
-		print ("Unchoked by peer <||{}||>".format(self.peer_id))
+	def process_unchoke_message(self, message):
+		new_unchoke_message = UnchokeMessage(data=message.raw)
+		self.received_message_buffer.append(new_unchoke_message)
+		print ("Unchoked by peer ({})".format(self.peer_id))
 		self.peer_choking = 0
 
-	def process_interested(self, message):
+	def process_interested_message(self, message):
 		self.received_message_buffer.append(message)
-		print ("Peer <||{}||> is interested".format(self.peer_id))
+		print ("Peer ({}) is interested".format(self.peer_id))
 		self.peer_interested = 1
 
-	def process_not_interested(self, message):
+	def process_not_interested_message(self, message):
 		self.received_message_buffer.append(message)
-		print ("Peer <||{}||> is not interested".format(self.peer_id))
+		print ("Peer ({}) is not interested".format(self.peer_id))
 		self.peer_interested = 0
 
-	def process_have(self, message):
+	def process_have_message(self, message):
 		self.received_message_buffer.append(message)
 		piece = message.payload
-		print ("Peer <||{}||> has piece {}".format(self.peer_id, piece))
+		print ("Peer ({}) has piece {}".format(self.peer_id, piece))
 		self.bitfield[convert_hex_to_int(message.payload)] = 1
 
-	def process_bitfield(self, message):
+	def process_bitfield_message(self, message):
 		"""
 		The bitfield is a byte representation of pieces. Each bit of each byte in the bitfield
 		represents the peer's ability to produce that piece (index 0 based from the first bit).
@@ -225,34 +302,50 @@ class Peer:
 		# so each byte of the bitfield represents
 		new_bitfield_message = BitfieldMessage(data=message.raw)
 		self.received_message_buffer.append(new_bitfield_message)
-		print ("Processing bitfield from peer <||{}||>".format(self.peer_id))
+		print ("Processing bitfield from peer ({})".format(self.peer_id))
 		self.bitfield.frombytes(new_bitfield_message.bitfield)
 		self.bitfield.tolist()
 
-	def process_request(self, message):
+	def process_piece_message(self, message):
+		"""
+		Adds a received block to the current piece only if it matches an outstanding request. If
+		so, it adds the data to piece and removes the request from the request buffer so that a
+		new request can be added to the buffer.
+
+		:param message: received piece message
+		:return: void
+		"""
+		print ("Processing new block message")
+		new_piece_message = PieceMessage(data=message.raw)
+		self.received_message_buffer.append(new_piece_message)
+
+		for request_message in self.request_buffer:
+			if request_message.piece_message_matches_request(new_piece_message):
+				print ("Block is in current piece")
+				# add the piece and remove the request.
+				self.current_piece.append_data(new_piece_message)
+				self.request_buffer.remove(request_message)
+
+	def process_request_message(self, message):
 		self.received_message_buffer.append(message)
 		requested_piece = message.payload
-		print ("Peer <||{}||> is requesting {}".format(self.peer_id, requested_piece))
+		print ("Peer ({}) is requesting {}".format(self.peer_id, requested_piece))
 
-	def process_piece(self, message):
-		self.received_message_buffer.append(message)
-		new_piece_message = PieceMessage(data=message.raw)
-		print ("Peer <||{}||> sent piece index {} begin {}".format(self.peer_id,
-																	new_piece_message.index,
-																	new_piece_message.begin))
-		self.current_piece.append_data(new_piece_message)
-
-	def process_cancel(self, message):
+	def process_cancel_message(self, message):
 		self.received_message_buffer.append(message)
 		piece = message.payload
-		print ("Peer <||{}||> has cancelled request for piece {}".format(self.peer_id, piece))
+		print ("Peer ({}) has cancelled request for piece {}".format(self.peer_id, piece))
 
-	def process_port(self, message):
+	def process_port_message(self, message):
 		self.received_message_buffer.append(message)
 		port = message.payload
-		print ("Peer <||{}||> has sent port {}".format(self.peer_id, port))
+		print ("Peer ({}) has sent port {}".format(self.peer_id, port))
 
-	def process_extended_handshake(self, message):
+	def process_extended_handshake_message(self, message):
 		self.received_message_buffer.append(message)
 		extension = message.payload
-		print ("Peer <||{}||> has sent extension {}".format(self.peer_id, extension))
+		print ("Peer ({}) has sent extension {}".format(self.peer_id, extension))
+
+	def process_keep_alive_message(self, message):
+		self.received_message_buffer.append(message)
+		print ("Peer ({}) has sent a keep-alive message")

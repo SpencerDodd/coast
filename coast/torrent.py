@@ -11,7 +11,7 @@ from twisted.internet import reactor
 import constants
 from peer import Peer
 from piece import Piece
-from messages import Handshake
+from messages import HandshakeMessage
 from protocols import PeerFactory
 from constants import PROTOCOL_STRING
 from helpermethods import one_directory_back, convert_int_to_hex
@@ -94,7 +94,7 @@ class Torrent:
 		# Data fields
 		self.download_location = os.path.join(os.path.expanduser("~"), "Downloads/")
 		self.peers = []
-		self.pieces = []
+		self.bitfield = []
 		self.pieces_hashes = []
 
 		try:
@@ -160,12 +160,12 @@ class Torrent:
 		Initializes the pieces array from the .torrent file metadata. Slices the pieces string
 		into 20-byte segments that represent the SHA1-hash of the piece's data
 
-		Also sets self.pieces as a bitfield array for tracking download progress
+		Also sets self.bitfield as a bitfield array for tracking download progress
 		"""
 		self.pieces_hashes = [self.metadata["pieces"][x:x+20] for x in range(0, len(self.metadata["pieces"]) / 20)]
 
 		for x in range(0, (len(self.metadata["info"]["pieces"]) / 20 / 8)):
-			self.pieces.append(0)
+			self.bitfield.append(0)
 
 	def can_request(self):
 		"""
@@ -304,7 +304,7 @@ class Torrent:
 		info_hash = self.generate_hex_info_hash()
 		peer_id = self.peer_id
 
-		handshake_message = Handshake(info_hash=info_hash, peer_id=peer_id).message()
+		handshake_message = HandshakeMessage(info_hash=info_hash, peer_id=peer_id).message()
 		return handshake_message
 
 	def send_tracker_request(self):
@@ -333,7 +333,7 @@ class Torrent:
 		:param peer: Peer to be removed
 		:return: void
 		"""
-		print ("Removing peer from active list <<||{}||>>".format(peer.peer_id))
+		print ("Removing peer from active list ({})".format(peer.peer_id))
 		self.active_peers.remove(peer)
 
 	def process_next_round(self, peer):
@@ -344,14 +344,18 @@ class Torrent:
 
 		:return:
 		"""
+		# TODO: figure out why the hell the peer keeps sending requests and doesn't empty the
+		# 		message queue
 		if peer.current_piece is not None and peer.current_piece.is_complete:
-			self.save_completed_peer_piece_to_disk(peer.get_next_piece(self.get_next_piece_for_download(peer)))
-		elif peer.received_bitfield():
-			# give the peer a piece
+			print ("Peer has completed downloading piece... Assigning a new piece")
+			self.save_completed_peer_piece_to_disk(peer.set_next_piece(self.get_next_piece_for_download(peer)))
+
+		elif peer.current_piece is None and peer.received_bitfield():
+			print ("Peer has bitfield but no piece... Assigning a piece")
 			peer.set_piece(self.get_next_piece_for_download(peer))
+
 		else:
-			# wait until the peer gets a bitfield
-			print ("Torrent waiting until peer gets a bitfield to give a piece assignment")
+			print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
 
 	def save_completed_peer_piece_to_disk(self, piece_to_save):
 		"""
@@ -362,10 +366,10 @@ class Torrent:
 		:param piece_to_save:
 		:return:
 		"""
-		pass
+		print ("Saving piece to disk (not actually implemented yet)")
 
 	def get_next_piece_for_download(self, peer):
-		next_index = self.pieces.index(0)
+		next_index = self.bitfield.index(0)
 		if peer.has_piece(next_index):
 			print ("Giving peer piece {} for download".format(next_index))
 			next_hash = self.pieces_hashes[next_index]
