@@ -20,18 +20,17 @@ class Piece:
 			self.data.append(0)
 		# self.debug_string()
 
-	def debug_string(self):
+	def debug_values(self):
 
-		output_string = "Creating new piece from:" + \
-			"STRING" + \
-			"\n\tpiece_len: {}".format(self.piece_length) + \
-			"\n\tindex: {}".format(self.index) + \
-			"\n\thash (bytes = {}): {}".format(len(self.hash), self.hash) + \
-			"\n\ttemp_location = {}".format(self.temp_location) + \
-			"\n\tprogress = {}".format(self.progress) + \
-			"\n\tdata: {}".format(self.data)
+		output_string = "PIECE" + \
+			"\npiece_len: {}".format(self.piece_length) + \
+			"\nindex: {}".format(self.index) + \
+			"\nhash (bytes = {}): {}".format(len(self.hash), self.hash) + \
+			"\ntemp_location = {}".format(self.temp_location) + \
+			"\nprogress = {}".format(self.progress) + \
+			"\ndownloaded data: (bytes = {})".format(len([val for val in self.data if val != 0]))
 
-		print (output_string)
+		return (output_string)
 
 	def get_next_begin(self):
 		"""

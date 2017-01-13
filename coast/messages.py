@@ -21,6 +21,11 @@ class StreamProcessor:
 		self.final_incomplete_message = None
 		self.complete_messages_purged = False
 
+	# TODO: need to disregard data after the incomplete message has been completed and the next
+	# 		frame is not a valid frame for a message. This is to deal with the random weird error
+	# 		messages being received (`test.test_data.test_broken_piece_message`), or just bad
+	# 		data being sent over the wire.
+
 	def parse_stream(self, data):
 		self.current_stream = data
 		print ("Current stream (bytes: {}): {}".format(
@@ -109,7 +114,7 @@ class Handshake:
 	def __init__(self, info_hash=None, peer_id=None, data=None):
 		self.message_type = "Handshake"
 		if data is None:
-			self.pstrlen = convert_int_to_hex(19)
+			self.pstrlen = convert_int_to_hex(19, 1)
 			self.pstr = "BitTorrent protocol"
 			self.reserved = "\x00\x00\x00\x00\x00\x00\x00\x00"
 			self.info_hash = info_hash
@@ -181,9 +186,6 @@ class Handshake:
 
 		return output_string
 
-# TODO: ensure that message creation from variable input are encoded to the correct byte lengths.
-# 		i.e. input(index=4) == \x00\x00\x00\x04 != \x04
-
 
 class ChokeMessage:
 	def __init__(self):
@@ -196,6 +198,16 @@ class ChokeMessage:
 		:return: string of message
 		"""
 		return "{}{}".format(self.len, self.id)
+
+	def debug_values(self):
+		"""
+		Debug output for debugging (redundancy is redundant)
+		:return:
+		"""
+		debug_string = "len: {}".format(self.len) + \
+			"id: {}".format(self.id)
+
+		return debug_string
 
 
 class UnchokeMessage:
@@ -210,6 +222,17 @@ class UnchokeMessage:
 		"""
 		return "{}{}".format(self.len, self.id)
 
+	def debug_values(self):
+		"""
+		Debug output for debugging (redundancy is redundant)
+		:return:
+		"""
+		debug_string = "len: {}".format(self.len) + \
+			"id: {}".format(self.id)
+
+		return debug_string
+
+
 class InterestedMessage:
 	def __init__(self):
 		self.len = "\x00\x00\x00\x01"
@@ -222,8 +245,18 @@ class InterestedMessage:
 		"""
 		return "{}{}".format(self.len, self.id)
 
+	def debug_values(self):
+		"""
+		Debug output for debugging (redundancy is redundant)
+		:return:
+		"""
+		debug_string = "len: {}".format(self.len) + \
+			"id: {}".format(self.id)
 
-class NotInterestedMessage:
+		return debug_string
+
+
+class NotInterestedMessage():
 	def __init__(self):
 		self.len = "\x00\x00\x00\x01"
 		self.id = "\x03"
@@ -235,14 +268,28 @@ class NotInterestedMessage:
 		"""
 		return "{}{}".format(self.len, self.id)
 
+	def debug_values(self):
+		"""
+		Debug output for debugging (redundancy is redundant)
+		:return:
+		"""
+		debug_string = "len: {}".format(self.len) + \
+			"id: {}".format(self.id)
 
-class HaveMessage:
-	def __init__(self, piece_index):
-		self.len = "\x00\x00\x00\x05"
-		self.id = "\x04"
-		self.payload = piece_index
-		if len(self.payload) > int(self.len.encode("hex", 16)) - 1:
-			raise Exception("Payload does not match declared message length")
+		return debug_string
+
+
+class HaveMessage(Message):
+	def __init__(self, piece_index=None, data=None):
+		if data is None:
+			self.len = "\x00\x00\x00\x05"
+			self.id = "\x04"
+			self.piece_index = piece_index
+			if len(self.piece_index) > int(self.len.encode("hex", 16)) - 1:
+				raise Exception("Payload does not match declared message length")
+		else:
+			Message.__init__(self, data)
+			self.piece_index = self.payload[0:4]
 
 	def message(self):
 		"""
@@ -251,13 +298,30 @@ class HaveMessage:
 		"""
 		return "{}{}{}".format(self.len, self.id, self.payload)
 
-class BitfieldMessage:
-	def __init__(self, bitfield):
-		self.len = convert_int_to_hex(1+len(bitfield))
-		self.id = "\x05"
-		self.payload = bitfield
-		if len(self.payload) > int(self.len.encode("hex", 16)) - 1:
-			raise Exception("Payload does not match declared message length")
+	def debug_values(self):
+		"""
+		Debug output for debugging (redundancy is redundant)
+		:return: debug string
+		"""
+		debug_string = "len: {}".format(self.len) + \
+			"id: {}".format(self.id) + \
+			"piece index: {}".format(self.piece_index)
+
+		return debug_string
+
+
+
+class BitfieldMessage(Message):
+	def __init__(self, bitfield=None, data=None):
+		if data is None:
+			self.len = convert_int_to_hex(1+len(bitfield), 4)
+			self.id = "\x05"
+			self.bitfield = bitfield
+			if len(self.bitfield) > convert_hex_to_int(self.len) - 1:
+				raise Exception("Payload does not match declared message length")
+		else:
+			Message.__init__(self, data)
+			self.bitfield = self.payload
 
 	def message(self):
 		"""
@@ -270,16 +334,16 @@ class BitfieldMessage:
 class RequestMessage(Message):
 	def __init__(self, index=None, begin=None, data=None):
 		if data is None:
-			self.len = "\x00\x00\x00\x0d"
-			self.id = "\x06"
-			self.index = index
-			self.begin = begin
-			self.length = REQUEST_SIZE
+			self.len_prefix = "\x00\x00\x00\x0d"
+			self.message_id = "\x06"
+			self.index = convert_int_to_hex(index, 4)
+			self.begin = convert_int_to_hex(begin, 4)
+			self.length = convert_int_to_hex(REQUEST_SIZE, 4)
 		else:
 			Message.__init__(self, data)
-			self.index = convert_hex_to_int(data[0:4])
-			self.begin = convert_hex_to_int(data[4:8])
-			self.length = convert_hex_to_int(data[8:12])
+			self.index = convert_hex_to_int(self.payload[0:4])
+			self.begin = convert_hex_to_int(self.payload[4:8])
+			self.length = convert_hex_to_int(self.payload[8:12])
 
 	def debug_values(self):
 		debug_string = "len: {}".format(self.len_prefix) + \
@@ -295,13 +359,13 @@ class RequestMessage(Message):
 		Gets the value of the choke message to send to the peer
 		:return: string of message
 		"""
-		return "{}{}{}{}{}".format(self.len, self.id, self.index, self.begin, self.length)
+		return "{}{}{}{}{}".format(self.len_prefix, self.message_id, self.index, self.begin, self.length)
 
 
 class PieceMessage(Message):
 	def __init__(self, index=None, begin=None, block=None, data=None):
 		if data is None:
-			self.len_prefix = convert_int_to_hex(9+len(block))
+			self.len_prefix = convert_int_to_hex(9+len(block), 4)
 			self.message_id = "\x07"
 			self.index = index
 			self.begin = begin
@@ -313,12 +377,12 @@ class PieceMessage(Message):
 			self.block = self.payload[8:]
 
 	def debug_values(self):
-		debug_string = "len: {}".format(self.len_prefix) + \
+		debug_string = "PIECE MESSAGE" + \
+				"\nlen: {}".format(self.len_prefix) + \
 				"\nid: {}".format(self.message_id) + \
 				"\nindex: {}".format(self.index) + \
 				"\nbegin: {}".format(self.begin) + \
-				"\nblock (bytes = {}): {}".format(
-					len(self.block), "0x" + " 0x".join(str(ord(c)) for c in self.block)
+				"\nblock (bytes = {})".format(len(self.block)
 				)
 
 		return debug_string
@@ -353,11 +417,15 @@ class CancelMessage(Message):
 		return "{}{}{}{}{}".format(self.len, self.id, self.index, self.begin, self.length)
 
 
-class PortMessage:
-	def __init__(self, listen_port):
-		self.len = "\x00\x00\x00\x0d"
-		self.id = "\x06"
-		self.listen_port = listen_port
+class PortMessage(Message):
+	def __init__(self, listen_port=None, data=None):
+		if data is None:
+			self.len = "\x00\x00\x00\x0d"
+			self.id = "\x06"
+			self.listen_port = listen_port
+		else:
+			Message.__init__(self, data)
+			self.listen_port = self.payload[0:4]
 
 	def message(self):
 		"""

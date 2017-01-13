@@ -15,15 +15,18 @@ def one_directory_back(current_directory):
 			return result
 
 
-def convert_int_to_hex(unencoded_input):
+def convert_int_to_hex(unencoded_input, padded_byte_size):
 	"""
-	Converts an integer to hexadecimal. Safer than hex(integer) call.
+	Converts an integer to hexadecimal. Can specify byte-padding for proper formatting for
+	message parameters
+
+	:param padded_byte_size: number of bytes the output should be padded to
 	:param unencoded_input: integer
 	:return: hex-encoded output
 	"""
 	encoded = format(unencoded_input, "x")
 	length = len(encoded)
-	encoded = encoded.zfill(length + length % 2)
+	encoded = encoded.zfill(2 * padded_byte_size)
 	return encoded.decode("hex")
 
 
@@ -35,3 +38,17 @@ def convert_hex_to_int(unencoded_input):
 	"""
 	return int(unencoded_input.encode("hex"), 16)
 
+
+def indent_string(input_string, level_of_indentation):
+	"""
+	Indents every line of a given string by the given level of indentation * [TAB]
+
+	:param input_string: string to be indented
+	:param level_of_indentation: number of tabs to insert at the beginning of each line
+	:return: indented string
+	"""
+	output_string = ""
+	for line in input_string.split("\n"):
+		output_string += "\n" + "\t"*level_of_indentation + line
+
+	return output_string

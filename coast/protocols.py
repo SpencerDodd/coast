@@ -42,8 +42,6 @@ class PeerProtocol(Protocol):
 		self.perform_actions_if_required()
 
 	def process_stream(self, data):
-		# TODO:: first message after handshake should be `InterestedMessage` if we are indeed
-		# 			interested in what the peer has (check client pieces?)
 		self.stream_processor.parse_stream(data)
 		complete_messages = self.stream_processor.complete_messages
 
@@ -75,8 +73,7 @@ class PeerProtocol(Protocol):
 		to be executed by the client. It also sends any messages to the peer from the client
 		following client execution of peer messages that are found in the actions queue
 		`self.client_responses`. This action queue is populated by ..."""
-		# TODO:: figure out message response flow and the interaction between torrent and peer
-		# 			in establishing what pieces to request from peer.
+
 		print ("Processing received messages in Peer")
 		for action in self.received_message_actions:
 			method = action[0]
@@ -85,7 +82,6 @@ class PeerProtocol(Protocol):
 
 			method(peer, message)
 
-		# TODO:: figure out how the form of client responses and how to act on them
 		print ("Checking on Torrent to see how to proceed")
 		self.factory.torrent.process_next_round(self.peer)
 

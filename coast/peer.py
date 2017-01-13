@@ -1,7 +1,7 @@
 import time
 import unittest
-from helpermethods import convert_hex_to_int
-from messages import Message, PieceMessage, InterestedMessage, RequestMessage
+from helpermethods import convert_hex_to_int, indent_string
+from messages import Message, PieceMessage, InterestedMessage, RequestMessage, BitfieldMessage
 from bitarray import bitarray
 """
 This class represents a peer
@@ -23,12 +23,12 @@ class Peer:
 		self.current_piece = None
 
 		# our control
-		self.am_choking = True
-		self.am_interested = False
+		self.am_choking = 1
+		self.am_interested = 0
 
 		# peer control
-		self.peer_choking = True
-		self.peer_interested = False
+		self.peer_choking = 1
+		self.peer_interested = 0
 
 	def initialize_with_chunk(self, byte_string_chunk):
 		"""
@@ -58,22 +58,41 @@ class Peer:
 		:return: string
 		"""
 		if self.current_piece is None:
-			status_string = "Status of peer <<||{}||>>".format(self.peer_id) + \
+			status_string = "-"*40 + \
+				"\nStatus of peer <<||{}||>>".format(self.peer_id) + \
 				"\n\tip: {}".format(self.ip) + \
 				"\n\tport: {}".format(self.port) + \
 				"\n\tbitfield: {}".format(self.bitfield) + \
-				"\n\tmessages: {}".format("".join(a.debug_values() for a in self.received_message_buffer)) + \
-				"\n\tpiece: {}".format(self.current_piece)
-		else:
-			status_string = "Status of peer <<||{}||>>".format(self.peer_id) + \
-							"\n\tip: {}".format(self.ip) + \
-							"\n\tport: {}".format(self.port) + \
-							"\n\tbitfield: {}".format(self.bitfield) + \
-							"\n\tmessages: {}".format(
-								"".join(a.debug_values() for a in self.received_message_buffer)) + \
-							"\n\tpiece: {}".format(self.current_piece.debug_string())
+				"\n\treceived messages: {}".format("\n\t".join(str(a) for a in self.received_message_buffer)) + \
+				"\n\toutgoing messages: {}".format("\n\t".join(str(a) for a in self.outgoing_message_buffer)) + \
+				"\n\ttime since last message: {}".format(self.time_since_last_message) + \
+				"\n\tpiece: {}".format(self.current_piece) + \
+				"\n\tam choking: {}".format(self.am_choking) + \
+				"\n\tam interested: {}".format(self.am_interested) + \
+				"\n\tpeer choking: {}".format(self.peer_choking) + \
+				"\n\tpeer interested: {}".format(self.peer_interested) + \
+				"\n"+"-"*40
 
-		return status_string
+			return status_string
+		else:
+			status_string = "-"*40 + \
+				"\nStatus of peer <<||{}||>>".format(self.peer_id) + \
+				"\n\tip: {}".format(self.ip) + \
+				"\n\tport: {}".format(self.port) + \
+				"\n\tbitfield: {}".format(self.bitfield) + \
+				"\n\treceived messages: {}".format(
+					"\n\t".join(str(a) for a in self.received_message_buffer)) + \
+				"\n\toutgoing messages: {}".format(
+					"\n\t".join(a.debug_values() for a in self.outgoing_message_buffer)) + \
+				"\n\ttime since last message: {}".format(self.time_since_last_message) + \
+				"\n\tpiece: \n{}".format(indent_string(self.current_piece.debug_values(), 2)) + \
+				"\n\tam choking: {}".format(self.am_choking) + \
+				"\n\tam interested: {}".format(self.am_interested) + \
+				"\n\tpeer choking: {}".format(self.peer_choking) + \
+				"\n\tpeer interested: {}".format(self.peer_interested) + \
+				"\n"+"-"*40
+
+			return status_string
 
 	def get_next_messages(self):
 		"""
@@ -86,12 +105,22 @@ class Peer:
 		:return: Array of Messages
 		"""
 		# remove all previous messages
-		# TODO: Message buffer is not being deleted
+		# TODO: Change the function of the outgoing message buffer
+		# 		change the message queue mechanism to compare a given next request and see if it
+		# 		is the same as the last request. If they are the same, don't add another identical
+		# 		request to the queue. Hold off until the last request has been met, then add the
+		# 		next to the queue.
 
+		print ("Getting next messages ...")
+		print ("Outgoing: {}".format("\n".join(indent_string(str(a), 1) for a in self.outgoing_message_buffer)))
 		print ("Removing previous outgoing messages")
-		del self.outgoing_message_buffer[:]
+		self.outgoing_message_buffer = []
+		print ("Outgoing: {}".format(
+			"\n".join(indent_string(str(a), 1) for a in self.outgoing_message_buffer)))
+		print ("Outgoing is empty: ({})".format(0 == len(self.outgoing_message_buffer)))
 
-		if self.am_interested != 1:
+		if self.am_interested == 0:
+			print ("Adding Interested to outgoing messages")
 			self.outgoing_message_buffer.append(InterestedMessage())
 			self.am_interested = 1
 		elif self.current_piece is not None and not self.current_piece.is_complete:
@@ -101,6 +130,7 @@ class Peer:
 			# class RequestMessage(Message):
 			# 	def __init__(self, index=None, begin=None, data=None):
 			next_request = RequestMessage(index=self.current_piece.index, begin=next_begin)
+			print ("Adding Request to outgoing messages")
 			self.outgoing_message_buffer.append(next_request)
 
 		return self.outgoing_message_buffer
@@ -137,6 +167,12 @@ class Peer:
 		return previous_piece
 
 	def has_piece(self, index):
+		"""
+		Returns true if the Peer's bitfield contains the piece at bitarray[index]
+
+		:param index: 0-based index of the piece
+		:return: boolean
+		"""
 		if len(self.bitfield.tolist()) == 0:
 			return False
 		else:
@@ -148,22 +184,22 @@ class Peer:
 	def process_choke(self, message):
 		self.received_message_buffer.append(message)
 		print ("Choked by peer <||{}||>".format(self.peer_id))
-		self.peer_choking = True
+		self.peer_choking = 1
 
 	def process_unchoke(self, message):
 		self.received_message_buffer.append(message)
 		print ("Unchoked by peer <||{}||>".format(self.peer_id))
-		self.peer_choking = False
+		self.peer_choking = 0
 
 	def process_interested(self, message):
 		self.received_message_buffer.append(message)
 		print ("Peer <||{}||> is interested".format(self.peer_id))
-		self.peer_interested = True
+		self.peer_interested = 1
 
 	def process_not_interested(self, message):
 		self.received_message_buffer.append(message)
 		print ("Peer <||{}||> is not interested".format(self.peer_id))
-		self.peer_interested = False
+		self.peer_interested = 0
 
 	def process_have(self, message):
 		self.received_message_buffer.append(message)
@@ -187,9 +223,10 @@ class Peer:
 		# 3040 pieces / 8 bits per byte  = 380
 		# length of bitfield = 380
 		# so each byte of the bitfield represents
-		self.received_message_buffer.append(message)
+		new_bitfield_message = BitfieldMessage(data=message.raw)
+		self.received_message_buffer.append(new_bitfield_message)
 		print ("Processing bitfield from peer <||{}||>".format(self.peer_id))
-		self.bitfield.frombytes(message.payload)
+		self.bitfield.frombytes(new_bitfield_message.bitfield)
 		self.bitfield.tolist()
 
 	def process_request(self, message):
@@ -199,7 +236,7 @@ class Peer:
 
 	def process_piece(self, message):
 		self.received_message_buffer.append(message)
-		new_piece_message = PieceMessage(message.payload)
+		new_piece_message = PieceMessage(data=message.raw)
 		print ("Peer <||{}||> sent piece index {} begin {}".format(self.peer_id,
 																	new_piece_message.index,
 																	new_piece_message.begin))

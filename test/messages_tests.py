@@ -1,9 +1,11 @@
 import os
 import unittest
 
-from test.test_data import test_piece_message, test_recursive_stream, test_stream_processor_stream
+from coast.helpermethods import convert_hex_to_int, convert_int_to_hex
+from test.test_data import test_piece_message, test_broken_piece_message, test_stream_processor_stream
+from test.test_data import test_captured_request, test_captured_piece
 from coast.piece import Piece
-from coast.messages import Handshake, StreamProcessor, PieceMessage
+from coast.messages import Handshake, StreamProcessor, PieceMessage, RequestMessage
 
 
 class MessageTests(unittest.TestCase):
@@ -53,7 +55,7 @@ class MessageTests(unittest.TestCase):
 	def test_stream_processor_recursion(self):
 		test_stream_processor = StreamProcessor()
 		test_stream_processor.handshake_occurred = True
-		test_stream_processor.parse_stream(test_recursive_stream)
+		test_stream_processor.parse_stream(test_broken_piece_message)
 
 	def test_piece_message(self):
 		test_piece_mes = PieceMessage(data=test_piece_message)
@@ -61,3 +63,19 @@ class MessageTests(unittest.TestCase):
 		test_piece = Piece(524288, 1670, "test_hash",
 						   os.path.join(os.path.expanduser("~"), "Downloads/"))
 		test_piece.append_data(test_piece_mes)
+
+	def test_request_creation(self):
+		"""
+		Test to check if our method of creating a request produces the same output as a request
+		captured off the wire.
+
+		:return: hopefully successful pass
+		"""
+		test_captured_message = RequestMessage(data=test_captured_request)
+		test_created_message = RequestMessage(index=1120, begin=425984)
+		self.assertEqual(test_captured_message.index, convert_hex_to_int(test_created_message.index))
+		self.assertEqual(test_captured_message.begin, convert_hex_to_int(test_created_message.begin))
+		self.assertEqual(test_captured_message.length, convert_hex_to_int(test_created_message.length))
+
+	def test_piece_creation(self):
+		test_piece_message = PieceMessage(data=test_captured_piece)

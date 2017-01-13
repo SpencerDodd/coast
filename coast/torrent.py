@@ -365,7 +365,6 @@ class Torrent:
 		pass
 
 	def get_next_piece_for_download(self, peer):
-		# TODO: make sure the peer has the piece before sending a request for it
 		next_index = self.pieces.index(0)
 		if peer.has_piece(next_index):
 			print ("Giving peer piece {} for download".format(next_index))
