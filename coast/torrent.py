@@ -13,8 +13,7 @@ from peer import Peer
 from piece import Piece
 from messages import HandshakeMessage
 from protocols import PeerFactory
-from constants import PROTOCOL_STRING
-from helpermethods import one_directory_back, convert_int_to_hex
+from helpermethods import one_directory_back
 
 # Error messages
 
@@ -344,8 +343,6 @@ class Torrent:
 
 		:return:
 		"""
-		# TODO: figure out why the hell the peer keeps sending requests and doesn't empty the
-		# 		message queue
 		if peer.current_piece is not None and peer.current_piece.is_complete:
 			print ("Peer has completed downloading piece... Assigning a new piece")
 			self.save_completed_peer_piece_to_disk(peer.set_next_piece(self.get_next_piece_for_download(peer)))
@@ -354,8 +351,10 @@ class Torrent:
 			print ("Peer has bitfield but no piece... Assigning a piece")
 			peer.set_piece(self.get_next_piece_for_download(peer))
 
-		else:
+		elif not peer.received_bitfield():
 			print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
+		else:
+			print ("Proceeding as usual... No update from torrent")
 
 	def save_completed_peer_piece_to_disk(self, piece_to_save):
 		"""

@@ -19,8 +19,7 @@ class Peer:
 		self.info_hash = None
 		self.byte_string_chunk = self.initialize_with_chunk(peer_chunk)
 		self.bitfield = bitarray(endian="big")
-		# TODO: request queue where non-responded requests wait until they receive a PieceMessage
-		# 		that satisfies the requested piece.
+		# TODO: track down choking that is occurring erroneously
 		self.MESSAGE_ID = {
 			0: Peer.process_choke_message,
 			1: Peer.process_unchoke_message,
@@ -34,7 +33,7 @@ class Peer:
 			9: Peer.process_port_message,
 			19: Peer.process_handshake_message,
 			20: Peer.process_extended_handshake_message,
-			225: Peer.process_keep_alive_message
+			255: Peer.process_keep_alive_message
 		}
 		self.received_message_buffer = []
 		self.request_buffer = []
@@ -152,10 +151,6 @@ class Peer:
 		# 		drop the peer from active connections (maybe blacklist temporarily inside Torrent),
 		# 		and spin up a new peer (in Torrent).
 
-		# TODO: make sure only constants.MAX_OUTSTANDING_REQUESTS are allowed in the request
-		# 		buffer.
-		# TODO: if peer is choking, it looks like they miss the first message maybe
-
 		print ("Getting next messages ...")
 		print ("Removing previous outgoing messages")
 		outgoing_message_buffer = []
@@ -178,20 +173,26 @@ class Peer:
 		# if we have an assigned piece that is not finished, and we haven't sent out the maximum
 		# 	number of requests yet: add a new request to our request buffer
 		elif self.current_piece is not None and not self.current_piece.is_complete and \
-						len(self.request_buffer) <= MAX_OUTSTANDING_REQUESTS:
+						len(self.request_buffer) < MAX_OUTSTANDING_REQUESTS and \
+						self.peer_choking == 0:
 
 			next_begin = self.current_piece.get_next_begin()
 			next_request = RequestMessage(index=self.current_piece.index, begin=next_begin)
 
 			if not self.current_piece.non_completed_request_exists(next_request):
 				print ("Adding new request to outgoing messages")
+				print ("Request for index: {}, begin: {}, length: {}".format(
+					next_request.get_index(),
+					next_request.get_begin(),
+					next_request.get_length()
+				))
 				outgoing_message_buffer.append(next_request)
 				self.request_buffer.append(next_request)
 				self.current_piece.add_non_completed_request_index(next_request)
 			else:
 				print ("New request already exists")
 		else:
-			print ("No request to be sent (piece not assigned, piece complete, or"
+			print ("No request to be sent (piece not assigned, piece complete, peer choking, or"
 				   "maximum number of requests already out.")
 
 		return outgoing_message_buffer
@@ -249,42 +250,39 @@ class Peer:
 	\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\///////////////////////////////////////////////
 	\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\///////////////////////////////////////////////
 	"""
-	def process_handshake_message(self, message):
-		new_handshake_message = HandshakeMessage(data=message.raw)
+	def process_handshake_message(self, new_handshake_message):
 		self.received_message_buffer.append(new_handshake_message)
 		self.peer_id = new_handshake_message.get_peer_id()
 		self.info_hash = new_handshake_message.get_info_hash()
 		print ("Handshake received from peer ({})".format(self.peer_id))
 
-	def process_choke_message(self, message):
-		new_choke_message = ChokeMessage(data=message.raw)
+	def process_choke_message(self, new_choke_message):
 		self.received_message_buffer.append(new_choke_message)
 		print ("Choked by peer ({})".format(self.peer_id))
 		self.peer_choking = 1
 
-	def process_unchoke_message(self, message):
-		new_unchoke_message = UnchokeMessage(data=message.raw)
+	def process_unchoke_message(self, new_unchoke_message):
 		self.received_message_buffer.append(new_unchoke_message)
 		print ("Unchoked by peer ({})".format(self.peer_id))
 		self.peer_choking = 0
 
-	def process_interested_message(self, message):
-		self.received_message_buffer.append(message)
+	def process_interested_message(self, new_interested_message):
+		self.received_message_buffer.append(new_interested_message)
 		print ("Peer ({}) is interested".format(self.peer_id))
 		self.peer_interested = 1
 
-	def process_not_interested_message(self, message):
-		self.received_message_buffer.append(message)
+	def process_not_interested_message(self, new_not_interested_message):
+		self.received_message_buffer.append(new_not_interested_message)
 		print ("Peer ({}) is not interested".format(self.peer_id))
 		self.peer_interested = 0
 
-	def process_have_message(self, message):
-		self.received_message_buffer.append(message)
-		piece = message.payload
-		print ("Peer ({}) has piece {}".format(self.peer_id, piece))
-		self.bitfield[convert_hex_to_int(message.payload)] = 1
+	def process_have_message(self, new_have_message):
+		self.received_message_buffer.append(new_have_message)
+		piece_index = new_have_message.get_piece_index()
+		print ("Peer ({}) has piece {}".format(self.peer_id, piece_index))
+		self.bitfield[piece_index] = 1
 
-	def process_bitfield_message(self, message):
+	def process_bitfield_message(self, new_bitfield_message):
 		"""
 		The bitfield is a byte representation of pieces. Each bit of each byte in the bitfield
 		represents the peer's ability to produce that piece (index 0 based from the first bit).
@@ -300,13 +298,12 @@ class Peer:
 		# 3040 pieces / 8 bits per byte  = 380
 		# length of bitfield = 380
 		# so each byte of the bitfield represents
-		new_bitfield_message = BitfieldMessage(data=message.raw)
 		self.received_message_buffer.append(new_bitfield_message)
 		print ("Processing bitfield from peer ({})".format(self.peer_id))
 		self.bitfield.frombytes(new_bitfield_message.bitfield)
 		self.bitfield.tolist()
 
-	def process_piece_message(self, message):
+	def process_piece_message(self, new_piece_message):
 		"""
 		Adds a received block to the current piece only if it matches an outstanding request. If
 		so, it adds the data to piece and removes the request from the request buffer so that a
@@ -316,7 +313,6 @@ class Peer:
 		:return: void
 		"""
 		print ("Processing new block message")
-		new_piece_message = PieceMessage(data=message.raw)
 		self.received_message_buffer.append(new_piece_message)
 
 		for request_message in self.request_buffer:
@@ -326,26 +322,22 @@ class Peer:
 				self.current_piece.append_data(new_piece_message)
 				self.request_buffer.remove(request_message)
 
-	def process_request_message(self, message):
-		self.received_message_buffer.append(message)
-		requested_piece = message.payload
-		print ("Peer ({}) is requesting {}".format(self.peer_id, requested_piece))
+	def process_request_message(self, new_request_message):
+		self.received_message_buffer.append(new_request_message)
+		print ("Peer ({}) is requesting {}".format(self.peer_id, new_request_message.get_begin()))
 
-	def process_cancel_message(self, message):
-		self.received_message_buffer.append(message)
-		piece = message.payload
-		print ("Peer ({}) has cancelled request for piece {}".format(self.peer_id, piece))
+	def process_cancel_message(self, new_cancel_message):
+		self.received_message_buffer.append(new_cancel_message)
+		print ("Peer ({}) has cancelled request for block {}".format(self.peer_id, new_cancel_message.get_begin()))
 
-	def process_port_message(self, message):
-		self.received_message_buffer.append(message)
-		port = message.payload
-		print ("Peer ({}) has sent port {}".format(self.peer_id, port))
+	def process_port_message(self, new_port_message):
+		self.received_message_buffer.append(new_port_message)
+		print ("Peer ({}) has sent port {}".format(self.peer_id, new_port_message.get_port()))
 
 	def process_extended_handshake_message(self, message):
 		self.received_message_buffer.append(message)
-		extension = message.payload
-		print ("Peer ({}) has sent extension {}".format(self.peer_id, extension))
+		print ("Peer ({}) has sent extension {}".format(self.peer_id, message.debug_values()))
 
-	def process_keep_alive_message(self, message):
-		self.received_message_buffer.append(message)
+	def process_keep_alive_message(self, new_keepalive_message):
+		self.received_message_buffer.append(new_keepalive_message)
 		print ("Peer ({}) has sent a keep-alive message")

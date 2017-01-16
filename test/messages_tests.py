@@ -3,7 +3,7 @@ import unittest
 
 from coast.helpermethods import convert_hex_to_int, convert_int_to_hex
 from test.test_data import test_captured_request, test_stream_processor_stream, \
-	test_piece_message, test_first_piece_message, test_captured_piece, test_torrent
+	test_piece_message, test_first_piece_message, test_torrent
 from coast.piece import Piece
 from coast.messages import HandshakeMessage, StreamProcessor, PieceMessage, RequestMessage
 from coast.constants import REQUEST_SIZE
@@ -46,15 +46,13 @@ class MessageTests(unittest.TestCase):
 		self.assertEqual(expected_handshake_string, captured_handshake.message())
 
 	def test_stream_processor(self):
-		test_stream_processor = StreamProcessor(test_torrent.bitfield)
+		test_stream_processor = StreamProcessor(test_torrent)
 		test_stream_processor.parse_stream(test_stream_processor_stream)
-		self.assertEqual(4, len(test_stream_processor.complete_messages))
+		self.assertEqual(1, len(test_stream_processor.get_complete_messages()))
 
-	# TODO:: figure out why recursion was occurring here. Maybe kill peers that send garbage
-	# 			packets? Try to figure out why this caused recursion issues. Check for ascii
-	# 			conversion that was done for `test_recursive_stream` and ensure it is correct.
+	# TODO:: figure out why recursion was occurring here
 	def test_stream_processor_recursion(self):
-		test_stream_processor = StreamProcessor(test_torrent.bitfield)
+		test_stream_processor = StreamProcessor(test_torrent)
 		test_stream_processor.handshake_occurred = True
 		test_stream_processor.parse_stream(test_first_piece_message)
 
@@ -80,10 +78,15 @@ class MessageTests(unittest.TestCase):
 		self.assertEqual(test_captured_message.get_length(), test_created_message.get_length())
 		self.assertTrue(test_captured_message.is_equal(test_created_message))
 
-	def test_piece_creation(self):
-		test_piece_message = PieceMessage(data=test_captured_piece)
-
 	def test_request_equality(self):
 		request1 = RequestMessage(index=0, begin=0)
 		request2 = RequestMessage(index=0, begin=0)
 		self.assertTrue(request1.is_equal(request2))
+
+	def test_get_len_prefix_and_expected_size(self):
+		test_piece_message = PieceMessage(data=test_first_piece_message)
+		self.assertEqual(REQUEST_SIZE + 9, test_piece_message.get_len_prefix())
+		self.assertEqual(7, test_piece_message.get_message_id())
+		self.assertEqual(0, test_piece_message.get_index())
+		self.assertEqual(0, test_piece_message.get_begin())
+		self.assertEqual(REQUEST_SIZE, test_piece_message.get_length())

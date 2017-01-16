@@ -52,3 +52,10 @@ def indent_string(input_string, level_of_indentation):
 		output_string += "\n" + "\t"*level_of_indentation + line
 
 	return output_string
+
+
+def format_hex_output(hex_input):
+	encoded = hex_input.encode("hex")
+	unformatted = [encoded[x:x+2] for x in range(0, len(encoded), 2)]
+	formatted = "0x" + " 0x".join(c for c in unformatted)
+	return formatted

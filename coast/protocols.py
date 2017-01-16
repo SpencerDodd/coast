@@ -14,7 +14,7 @@ class PeerProtocol(Protocol):
 		self.factory = factory
 		self.peer = peer
 		self.handshake_exchanged = False
-		self.stream_processor = StreamProcessor(self.factory.torrent.bitfield)
+		self.stream_processor = StreamProcessor(self.factory.torrent)
 		self.outgoing_messages = []
 
 	def connectionMade(self):
@@ -28,10 +28,9 @@ class PeerProtocol(Protocol):
 		self.send_next_messages()
 
 	def process_stream(self, data):
+		# TODO: mechanism for dropping garbage data.
 		self.stream_processor.parse_stream(data)
-		self.peer.received_messages(self.stream_processor.complete_messages)
-		if self.stream_processor.final_incomplete_message is not None:
-			print ("Incomplete")
+		self.peer.received_messages(self.stream_processor.get_complete_messages())
 
 		# purge the completed messages
 		self.stream_processor.purge_complete_messages()
@@ -59,6 +58,8 @@ class PeerProtocol(Protocol):
 
 		# send them and update the last time of contact for the peer (for keep-alive)
 		for outgoing_message in self.outgoing_messages:
+			print ("Sending message: {}".format(str(outgoing_message)))
+
 			self.transport.write(outgoing_message.message())
 			self.peer.update_last_contact()
 
