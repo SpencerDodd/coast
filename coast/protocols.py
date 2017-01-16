@@ -28,7 +28,6 @@ class PeerProtocol(Protocol):
 		self.send_next_messages()
 
 	def process_stream(self, data):
-		# TODO: mechanism for dropping garbage data.
 		self.stream_processor.parse_stream(data)
 		self.peer.received_messages(self.stream_processor.get_complete_messages())
 
@@ -50,7 +49,8 @@ class PeerProtocol(Protocol):
 			if self.peer.info_hash != self.factory.torrent.generate_hex_info_hash():
 				self.connectionLost(reason=Failure("Peer info hash did not match torrent info hash"))
 
-		print ("Checking on Torrent to see how to proceed")
+		# DEBUG
+		# print ("Checking on Torrent to see how to proceed")
 		self.factory.torrent.process_next_round(self.peer)
 
 		# we get our next messages from peer
@@ -58,7 +58,8 @@ class PeerProtocol(Protocol):
 
 		# send them and update the last time of contact for the peer (for keep-alive)
 		for outgoing_message in self.outgoing_messages:
-			print ("Sending message: {}".format(str(outgoing_message)))
+			# DEBUG
+			# print ("Sending message: {}".format(str(outgoing_message)))
 
 			self.transport.write(outgoing_message.message())
 			self.peer.update_last_contact()

@@ -12,9 +12,6 @@ incoming peer handshakes into parsed and usable data by the client.
 Stream processor for parsing and assembling messages from a peer TCP stream.
 """
 
-# TODO: all message fields should be raw hex, all get methods should return the int values of
-# 		the raw hex data (for len,id fields; raw hex for all other fields)
-
 
 class StreamProcessor:
 	def __init__(self, torrent):
@@ -28,6 +25,10 @@ class StreamProcessor:
 				"byte_size": 68
 			},
 			"\x00\x00\x00\x00": {
+				"create_method": self.create_keepalive_message,
+				"byte_size": 4
+			},
+			"\x00\x00\x00\x00\x00": {
 				"create_method": self.create_keepalive_message,
 				"byte_size": 4
 			},
@@ -73,24 +74,27 @@ class StreamProcessor:
 			}
 		}
 
-		print self.message_headers.keys()
-
 	def parse_stream(self, stream_data):
 		self.stream += stream_data
 
-		print ("Current Stream: {}".format(format_hex_output(self.stream)))
+		# DEBUG
+		# print ("Current Stream: {}".format(format_hex_output(self.stream)))
 
 		# check to make sure the stream has enough data in it to parse out the first message
 		required_bytes = self.message_headers[self.stream[0:5]]["byte_size"]
 
-		print ("Next message requires {} bytes".format(required_bytes))
+		# DEBUG
+		# print ("Next message requires {} bytes".format(required_bytes))
 
 		if len(self.stream) < required_bytes:
-			print ("---Waiting for more data to complete stream")
-			print (format_hex_output(self.stream))
+			pass
+			# DEBUG
+			# print ("---Waiting for more data to complete stream")
+			# print (format_hex_output(self.stream))
 		else:
 			try:
-				print ("---Appending new complete message")
+				# debug
+				# print ("---Appending new complete message")
 				new_complete_message = self.message_headers[self.stream[:5]]["create_method"](data=self.stream[:required_bytes])
 				self.completed_stream_messages.append(new_complete_message)
 				self.stream = self.stream[required_bytes:]
@@ -110,51 +114,63 @@ class StreamProcessor:
 		self.completed_stream_messages = []
 
 	def create_handshake_message(self, data=None):
-		print ("Creating a new handshake message")
+		# DEBUG
+		# print ("Creating a new handshake message")
 		return HandshakeMessage(data=data)
 
 	def create_keepalive_message(self, data=None):
-		print ("Creating a new keepalive message")
+		# DEBUG
+		#  print ("Creating a new keepalive message")
 		return KeepAliveMessage(data=data)
 
 	def create_choke_message(self, data=None):
-		print ("Creating a new choke message")
+		# DEBUG
+		#  print ("Creating a new choke message")
 		return ChokeMessage(data=data)
 
 	def create_unchoke_message(self, data=None):
-		print ("Creating a new unchoke message")
+		# DEBUG
+		#  print ("Creating a new unchoke message")
 		return UnchokeMessage(data=data)
 
 	def create_interested_message(self, data=None):
-		print ("Creating a new interested message")
+		# DEBUG
+		#  print ("Creating a new interested message")
 		return InterestedMessage(data=data)
 
 	def create_notinterested_message(self, data=None):
-		print ("Creating a new notinterested message")
+		# DEBUG
+		#  print ("Creating a new notinterested message")
 		return NotInterestedMessage(data=data)
 
 	def create_have_message(self, data=None):
-		print ("Creating a new have message")
+		# DEBUG
+		#  print ("Creating a new have message")
 		return HaveMessage(data=data)
 
 	def create_bitfield_message(self, data=None):
-		print ("Creating a new bitfield message")
+		# DEBUG
+		#  print ("Creating a new bitfield message")
 		return BitfieldMessage(data=data)
 
 	def create_request_message(self, data=None):
-		print ("Creating a new request message")
+		# DEBUG
+		#  print ("Creating a new request message")
 		return RequestMessage(data=data)
 
 	def create_piece_message(self, data=None):
-		print ("Creating a new piece message")
+		# DEBUG
+		#  print ("Creating a new piece message")
 		return PieceMessage(data=data)
 
 	def create_cancel_message(self, data=None):
-		print ("Creating a new cancel message")
+		# DEBUG
+		#  print ("Creating a new cancel message")
 		return CancelMessage(data=data)
 
 	def create_port_message(self, data=None):
-		print ("Creating a new port message")
+		# DEBUG
+		#  print ("Creating a new port message")
 		return PortMessage(data=data)
 
 
@@ -503,10 +519,6 @@ class BitfieldMessage:
 		"""
 		return "{}{}{}".format(self.len_prefix, self.message_id, self.bitfield)
 
-	# TODO: hardcoded will fail for any torrent other than test torrent.
-	# 	calculation is:
-	#  	bitfield_size = (# of pieces `60800` / length of piece `20 bytes`) / 8 `bits in a byte`
-
 	def get_len_prefix(self):
 		return convert_hex_to_int(self.len_prefix)
 
@@ -575,10 +587,11 @@ class RequestMessage:
 		:param piece_message:
 		:return:
 		"""
-		print "Comparing given block to request"
-		print "Requested index: {}, Block index: {}".format(self.get_index(), piece_message.get_index())
-		print "Requested begin: {}, Block begin: {}".format(self.get_begin(), piece_message.get_begin())
-		print "Requested block size: {}, Block block size: {}".format(self.get_length(), piece_message.get_length())
+		# DEBUG
+		# print "Comparing given block to request"
+		# print "Requested index: {}, Block index: {}".format(self.get_index(), piece_message.get_index())
+		# print "Requested begin: {}, Block begin: {}".format(self.get_begin(), piece_message.get_begin())
+		# print "Requested block size: {}, Block block size: {}".format(self.get_length(), piece_message.get_length())
 
 		return self.get_index() == piece_message.get_index() and \
 			self.get_begin() == piece_message.get_begin() and \

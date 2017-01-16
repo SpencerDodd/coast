@@ -13,7 +13,7 @@ from peer import Peer
 from piece import Piece
 from messages import HandshakeMessage
 from protocols import PeerFactory
-from helpermethods import one_directory_back
+from helpermethods import one_directory_back, make_dir
 
 # Error messages
 
@@ -89,6 +89,7 @@ class Torrent:
 		self.last_response_object = None
 		self.connected_peers = 0
 		self.active_peers = []
+		self.assigned_pieces = []
 
 		# Data fields
 		self.download_location = os.path.join(os.path.expanduser("~"), "Downloads/")
@@ -106,6 +107,9 @@ class Torrent:
 		self.tracker_request["port"] = port
 		self.tracker_request["info_hash"] = self.generate_info_hash()
 		self.tracker_request["left"] = self.metadata["info"]["length"]
+
+		# Make the temp dir for piece downloading
+		make_dir(os.path.join(self.download_location, "tmp"))
 
 	def initialize_metadata_from_file(self):
 		"""Fills in torrent information by reading from a metadata file (.torrent)
@@ -127,7 +131,7 @@ class Torrent:
 					self.metadata["pieces"] = decoded_data["info"]["pieces"]
 					self.torrent_name = self.metadata["info"]["name"]
 					# set the download location to dir + name
-					os.path.join(self.download_location, self.torrent_name)
+					self.download_location = os.path.join(self.download_location, self.torrent_name)
 
 					# initialize our pieces dict from the pieces string
 					self.initialize_pieces()
@@ -161,7 +165,7 @@ class Torrent:
 
 		Also sets self.bitfield as a bitfield array for tracking download progress
 		"""
-		self.pieces_hashes = [self.metadata["pieces"][x:x+20] for x in range(0, len(self.metadata["pieces"]) / 20)]
+		self.pieces_hashes = [self.metadata["pieces"][x:x+20] for x in range(0, len(self.metadata["pieces"]), 20)]
 
 		for x in range(0, (len(self.metadata["info"]["pieces"]) / 20 / 8)):
 			self.bitfield.append(0)
@@ -332,8 +336,10 @@ class Torrent:
 		:param peer: Peer to be removed
 		:return: void
 		"""
+		# DEBUG
 		print ("Removing peer from active list ({})".format(peer.peer_id))
 		self.active_peers.remove(peer)
+		self.assigned_pieces.remove(peer.current_piece.get_index())
 
 	def process_next_round(self, peer):
 		"""
@@ -344,17 +350,27 @@ class Torrent:
 		:return:
 		"""
 		if peer.current_piece is not None and peer.current_piece.is_complete:
+			# DEBUG
 			print ("Peer has completed downloading piece... Assigning a new piece")
-			self.save_completed_peer_piece_to_disk(peer.set_next_piece(self.get_next_piece_for_download(peer)))
+			# self.save_completed_peer_piece_to_disk(peer.set_next_piece(self.get_next_piece_for_download(peer)))
+			piece_to_save = peer.current_piece
+			if piece_to_save.data_matches_hash():
+				self.exchange_completed_piece_for_new_piece(peer)
+			else:
+				peer.set_next_piece(piece_to_save.reset())
 
 		elif peer.current_piece is None and peer.received_bitfield():
+			# DEBUG
 			print ("Peer has bitfield but no piece... Assigning a piece")
 			peer.set_piece(self.get_next_piece_for_download(peer))
 
 		elif not peer.received_bitfield():
+			pass
 			print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
 		else:
-			print ("Proceeding as usual... No update from torrent")
+			pass
+			# DEBUG
+			# print ("Proceeding as usual... No update from torrent")
 
 	def save_completed_peer_piece_to_disk(self, piece_to_save):
 		"""
@@ -366,16 +382,38 @@ class Torrent:
 		:return:
 		"""
 		print ("Saving piece to disk (not actually implemented yet)")
+		# set the given piece of the bitarray to 1
+		piece_to_save.write_to_temporary_storage()
+		self.bitfield[piece_to_save.get_index()] = 1
+
+	def exchange_completed_piece_for_new_piece(self, peer):
+		self.assigned_pieces.remove(peer.current_piece.get_index())
+		self.bitfield[peer.current_piece.get_index()] = 1
+		self.save_completed_peer_piece_to_disk(peer.current_piece)
+		peer.set_next_piece(self.get_next_piece_for_download(peer))
 
 	def get_next_piece_for_download(self, peer):
-		next_index = self.bitfield.index(0)
+		"""Previous ...
+		# next_index = self.bitfield.index(0)
 		if peer.has_piece(next_index):
 			print ("Giving peer piece {} for download".format(next_index))
 			next_hash = self.pieces_hashes[next_index]
 			next_piece = Piece(self.metadata["piece_length"], next_index, next_hash, self.download_location)
+			self.assigned_pieces += next_index
 			return next_piece
 		else:
-			print ("Couldn't find a piece")
+			print ("No pieces left to give")
+		"""
+		for index, bit in enumerate(self.bitfield):
+			if index not in self.assigned_pieces and self.bitfield[index] == 0:
+				print ("Giving peer piece {} for download".format(index))
+				next_hash = self.pieces_hashes[index]
+				next_piece = Piece(self.metadata["piece_length"], index, next_hash, self.download_location)
+				self.assigned_pieces.append(index)
+				print ("Assigned: {}".format(",".join(str(x) for x in self.assigned_pieces)))
+				return next_piece
+
+
 
 
 if __name__ == "__main__":

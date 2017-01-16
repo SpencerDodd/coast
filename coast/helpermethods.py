@@ -1,3 +1,5 @@
+import os
+
 """
 Returns the pwd, minus one level of depth
 """
@@ -59,3 +61,12 @@ def format_hex_output(hex_input):
 	unformatted = [encoded[x:x+2] for x in range(0, len(encoded), 2)]
 	formatted = "0x" + " 0x".join(c for c in unformatted)
 	return formatted
+
+
+def make_dir(directory):
+	"""
+	Creates a directory if it doesn't exist
+	:param directory: path to create
+	"""
+	if not os.path.exists(directory):
+		os.mkdir(directory)

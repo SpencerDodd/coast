@@ -2,7 +2,7 @@ import os
 import hashlib
 
 from constants import REQUEST_SIZE
-from helpermethods import indent_string
+from helpermethods import format_hex_output
 
 """
 This class represents a piece of a torrent downloaded from a peer.
@@ -23,6 +23,7 @@ class Piece:
 
 		for x in range(0, self.piece_length):
 			self.data.append(0)
+		# DEBUG
 		# self.debug_string()
 
 	def debug_values(self):
@@ -50,13 +51,10 @@ class Piece:
 			return 0
 
 	def write_to_temporary_storage(self):
-		if not self.is_complete:
-			raise Exception("Trying to write incomplete piece to disk")
-
-		pass
-
-		# delete data from piece to conserve program memory
-		self.data = None
+		if self.is_complete:
+			with open(self.temp_location, "w") as temp_file:
+				for datum in self.data:
+					temp_file.write(datum)
 
 	def update_progress(self):
 		self.progress = ((len(self.data) - self.data.count(0)) / float(len(self.data))) * 100
@@ -68,24 +66,45 @@ class Piece:
 		self.non_completed_request_indices.append(int(request_message.get_begin()))
 
 	def append_data(self, piece_message):
-		print ("appending data")
-		print ("block index: {}".format(piece_message.get_begin()))
-		print ("completed indices: {}".format(",".join(str(a) for a in self.completed_request_indices)))
-		print ("non-completed indices: {}".format(",".join(str(a) for a in self.non_completed_request_indices)))
+		# DEBUG
+
+		# print ("appending data")
+		# print ("block index: {}".format(piece_message.get_begin()))
+		# print ("completed indices: {}".format(",".join(str(a) for a in self.completed_request_indices)))
+		# print ("non-completed indices: {}".format(",".join(str(a) for a in self.non_completed_request_indices)))
 
 		for x in range(0, len(piece_message.block)):
 			self.data[piece_message.get_begin() + x] = piece_message.block[x]
 
-		print ("Tupac - Changes")
 		self.completed_request_indices.append(piece_message.get_begin())
 		self.non_completed_request_indices.remove(int(piece_message.get_begin()))
 		self.update_progress()
 
-		print ("completed indices: {}".format(",".join(str(a) for a in self.completed_request_indices)))
-		print ("non-completed indices: {}".format(",".join(str(a) for a in self.non_completed_request_indices)))
+		# DEBUG
+		# print ("completed indices: {}".format(",".join(str(a) for a in self.completed_request_indices)))
+		# print ("non-completed indices: {}".format(",".join(str(a) for a in self.non_completed_request_indices)))
 
 	def non_completed_request_exists(self, request_message):
 		return request_message.get_begin() in self.non_completed_request_indices
 
 	def data_matches_hash(self):
-		return hashlib.sha1(self.data) == self.hash
+		current_hash = hashlib.sha1("".join(byte for byte in self.data)).digest()
+		# DEBUG
+		print ("Comparing hashes for completed piece")
+		print ("Current hash: {}".format(format_hex_output(current_hash)))
+		print ("Piece hash:   {}".format(format_hex_output(self.hash)))
+		print ("Same? {}".format(current_hash == self.hash))
+		return current_hash == self.hash
+
+	def progress_string(self):
+		return "{}% {}".format(str(self.progress).rjust(6), int(self.progress) * "|")
+
+	def get_index(self):
+		return self.index
+
+	def reset(self):
+		self.data = []
+		self.progress = 0.0
+		self.is_complete = False
+		self.completed_request_indices = []
+		self.non_completed_request_indices = []
