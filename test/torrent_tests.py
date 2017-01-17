@@ -5,6 +5,7 @@ import unittest
 from coast.torrent import Torrent
 from coast.constants import ERROR_BYTESTRING_CHUNKSIZE
 from coast.helpermethods import one_directory_back, convert_int_to_hex
+from test.test_data import test_torrent
 
 
 class TestTorrent(unittest.TestCase):
@@ -148,13 +149,6 @@ class TestTorrent(unittest.TestCase):
 		self.assertEqual(convert_int_to_hex(19, 1), '\x13')
 
 	def test_handshake_message(self):
-		test_peer_id = "-CO0001-5208360bf90d"
-		test_port = 6881
-		root_dir = one_directory_back(os.getcwd())
-		test_data_directory = os.path.join(root_dir, "test/")
-		test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
-		test_torrent_file_path = os.path.join(test_data_directory, test_torrent_file)
-		test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
 
 		expected_info_hash = '\x13BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00' + \
 				'\x04\x03\xfbG(\xbdx\x8f\xbc\xb6~\x87\xd6\xfe\xb2A\xef8\xc7Z-CO0001-5208360bf90d'

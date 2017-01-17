@@ -4,11 +4,12 @@ import urllib
 import bencode
 import hashlib
 import requests
-import unittest
 import traceback
 from twisted.internet import reactor
+from twisted.internet.protocol import Factory
 
 import constants
+from protocols import PeerProtocol
 from peer import Peer
 from piece import Piece
 from messages import HandshakeMessage
@@ -92,7 +93,8 @@ class Torrent:
 		self.assigned_pieces = []
 
 		# Data fields
-		self.download_location = os.path.join(os.path.expanduser("~"), "Downloads/")
+		self.download_root = os.path.join(os.path.expanduser("~"), "Downloads/")
+		self.temporary_download_location = None
 		self.peers = []
 		self.bitfield = []
 		self.pieces_hashes = []
@@ -109,7 +111,10 @@ class Torrent:
 		self.tracker_request["left"] = self.metadata["info"]["length"]
 
 		# Make the temp dir for piece downloading
-		make_dir(os.path.join(self.download_location, "tmp"))
+		make_dir(os.path.join(self.download_root))
+
+		# establish existing progress from earlier session
+		self.initialize_previously_downloaded_progress()
 
 	def initialize_metadata_from_file(self):
 		"""Fills in torrent information by reading from a metadata file (.torrent)
@@ -131,7 +136,7 @@ class Torrent:
 					self.metadata["pieces"] = decoded_data["info"]["pieces"]
 					self.torrent_name = self.metadata["info"]["name"]
 					# set the download location to dir + name
-					self.download_location = os.path.join(self.download_location, self.torrent_name)
+					self.download_root = os.path.join(self.download_root, self.torrent_name)
 
 					# initialize our pieces dict from the pieces string
 					self.initialize_pieces()
@@ -169,6 +174,20 @@ class Torrent:
 
 		for x in range(0, (len(self.metadata["info"]["pieces"]) / 20 / 8)):
 			self.bitfield.append(0)
+
+	def initialize_previously_downloaded_progress(self):
+		"""
+		from os import listdir
+		from os.path import isfile, join
+		onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+		"""
+		self.temporary_download_location = os.path.join(self.download_root, "tmp/")
+		make_dir(os.path.join(self.temporary_download_location))
+
+		piece_files = [f for f in os.listdir(self.temporary_download_location) if
+					   os.path.isfile(os.path.join(self.temporary_download_location, f))]
+		for file_name in piece_files:
+			self.bitfield[int(file_name.split(".")[0])] = 1
 
 	def can_request(self):
 		"""
@@ -320,7 +339,7 @@ class Torrent:
 		""" Connects to the peers in the 'peers' field of the object"""
 		while self.connected_peers < constants.MAX_PEERS:
 			current_peer = self.peers[self.connected_peers]
-			reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, current_peer))
+			reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, reactor, current_peer))
 			self.active_peers.append(current_peer)
 			self.connected_peers += 1
 
@@ -339,7 +358,8 @@ class Torrent:
 		# DEBUG
 		print ("Removing peer from active list ({})".format(peer.peer_id))
 		self.active_peers.remove(peer)
-		self.assigned_pieces.remove(peer.current_piece.get_index())
+		if peer.current_piece is not None:
+			self.assigned_pieces.remove(peer.current_piece.get_index())
 
 	def process_next_round(self, peer):
 		"""
@@ -398,7 +418,7 @@ class Torrent:
 		if peer.has_piece(next_index):
 			print ("Giving peer piece {} for download".format(next_index))
 			next_hash = self.pieces_hashes[next_index]
-			next_piece = Piece(self.metadata["piece_length"], next_index, next_hash, self.download_location)
+			next_piece = Piece(self.metadata["piece_length"], next_index, next_hash, self.download_root)
 			self.assigned_pieces += next_index
 			return next_piece
 		else:
@@ -408,12 +428,10 @@ class Torrent:
 			if index not in self.assigned_pieces and self.bitfield[index] == 0:
 				print ("Giving peer piece {} for download".format(index))
 				next_hash = self.pieces_hashes[index]
-				next_piece = Piece(self.metadata["piece_length"], index, next_hash, self.download_location)
+				next_piece = Piece(self.metadata["piece_length"], index, next_hash, self.download_root)
 				self.assigned_pieces.append(index)
 				print ("Assigned: {}".format(",".join(str(x) for x in self.assigned_pieces)))
 				return next_piece
-
-
 
 
 if __name__ == "__main__":

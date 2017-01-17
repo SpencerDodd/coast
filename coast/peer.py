@@ -4,7 +4,8 @@ from helpermethods import convert_hex_to_int, indent_string
 from messages import ChokeMessage, UnchokeMessage, InterestedMessage, InterestedMessage, \
 	PieceMessage, HaveMessage, RequestMessage, BitfieldMessage, HandshakeMessage
 from bitarray import bitarray
-from constants import MAX_OUTSTANDING_REQUESTS
+from constants import MAX_OUTSTANDING_REQUESTS, PEER_INACTIVITY_LIMIT
+from twisted.internet.defer import Deferred
 
 """
 This class represents a peer
@@ -34,10 +35,11 @@ class Peer:
 			20: Peer.process_extended_handshake_message,
 			255: Peer.process_keep_alive_message
 		}
+		self.handshake_exchanged = False
 		self.received_message_buffer = []
 		self.request_buffer = []
 		self.previous_requests = []
-		self.time_since_last_message = None
+		self.time_of_last_message = time.time()
 		# for interaction with Torrent object
 		self.current_piece = None
 
@@ -121,6 +123,7 @@ class Peer:
 		:param messages: Array of received messages from StreamProcessor
 		"""
 		for message in messages:
+			self.time_of_last_message = time.time()
 			self.MESSAGE_ID[message.get_message_id()](self, message)
 
 	def get_next_messages(self):
@@ -267,6 +270,7 @@ class Peer:
 		self.received_message_buffer.append(new_handshake_message)
 		self.peer_id = new_handshake_message.get_peer_id()
 		self.info_hash = new_handshake_message.get_info_hash()
+		self.handshake_exchanged = True
 		print ("Handshake received from peer ({})".format(self.peer_id))
 
 	def process_choke_message(self, new_choke_message):

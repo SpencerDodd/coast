@@ -1,7 +1,9 @@
 from twisted.internet.protocol import Protocol, ClientFactory
 from twisted.python.failure import Failure
-from peer import Peer
+from twisted.internet.defer import Deferred
+import time
 from messages import StreamProcessor
+from constants import PEER_INACTIVITY_LIMIT
 
 """
 This file defines the coast TCP implementation of the BitTorrent protocol in interacting with
@@ -10,7 +12,8 @@ peers
 
 
 class PeerProtocol(Protocol):
-	def __init__(self, factory, peer):
+	def __init__(self, factory, rctr, peer):
+		self.reactor = rctr
 		self.factory = factory
 		self.peer = peer
 		self.handshake_exchanged = False
@@ -26,6 +29,11 @@ class PeerProtocol(Protocol):
 	def dataReceived(self, data):
 		self.process_stream(data)
 		self.send_next_messages()
+
+		# adds the deferred for killing the connection due to inactivity
+		self.reactor.callLater(PEER_INACTIVITY_LIMIT, self.disconnect_with_inactivity)
+		# DEBUG
+		# print ("ADDED THE CALLBACK")
 
 	def process_stream(self, data):
 		self.stream_processor.parse_stream(data)
@@ -47,7 +55,7 @@ class PeerProtocol(Protocol):
 		"""
 		if self.handshake_exchanged:
 			if self.peer.info_hash != self.factory.torrent.generate_hex_info_hash():
-				self.connectionLost(reason=Failure("Peer info hash did not match torrent info hash"))
+				self.transport.loseConnection()
 
 		# DEBUG
 		# print ("Checking on Torrent to see how to proceed")
@@ -66,9 +74,31 @@ class PeerProtocol(Protocol):
 
 		self.outgoing_messages = []
 
+	def disconnect_with_inactivity(self):
+		# DEBUG
+		# print ("CHECKING FOR DISCONNECT")
+		"""
+		The deferred callback for killing a peer connection if it is inactive for a defined
+		amount of time
+		"""
+		current_time = time.time()
+		if current_time - self.peer.time_of_last_message > PEER_INACTIVITY_LIMIT:
+			if not self.peer.handshake_exchanged:
+				print ("Disconnecting Peer ({}) due to inactivity (failed to exchange handshake)".format(self.peer.peer_id))
+				self.transport.loseConnection()
+			else:
+				print ("Disconnecting Peer ({}) due to inactivity".format(self.peer.peer_id))
+				self.transport.loseConnection()
+		else:
+			pass
+			# DEBUG
+			# print ("PEER CONTACTED IN TIME TO AVOID DISCONNECT")
+			# print ("CURRENT TIME - TIME OF LAST MESSAGE = {}".format(current_time - self.peer.time_of_last_message))
+
 
 class PeerFactory(ClientFactory):
-	def __init__(self, torrent, peer):
+	def __init__(self, torrent, rctr, peer):
+		self.reactor = rctr
 		self.torrent = torrent
 		self.protocols = []
 		self.peer = peer
@@ -77,13 +107,14 @@ class PeerFactory(ClientFactory):
 		print ("Starting connection to peer ({}: {})".format(self.peer.ip, self.peer.port))
 
 	def buildProtocol(self, addr):
-		protocol = PeerProtocol(self, self.peer)
+		protocol = PeerProtocol(self, self.reactor, self.peer)
 		self.protocols.append(protocol)
 		return protocol
 
 	def clientConnectionLost(self, connector, reason):
 		print ("Lost connection to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))
 		self.torrent.remove_active_peer(self.peer)
+		# TODO: remove the protocol from self.protocols
 
 	def clientConnectionFailed(self, connector, reason):
 		print ("Connection failed to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))

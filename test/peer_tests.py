@@ -43,7 +43,7 @@ class TestPeer(unittest.TestCase):
 			piece_length=test_torrent.metadata["piece_length"],
 			index=0,
 			hash=test_torrent.pieces_hashes[0],
-			download_location=test_torrent.download_location
+			download_location=test_torrent.download_root
 		)
 
 	def test_request_buffer(self):

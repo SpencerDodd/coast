@@ -24,7 +24,7 @@ class PieceTests(unittest.TestCase):
 		test_piece_size = test_torrent.metadata["piece_length"]
 		test_piece_index = 0
 		test_piece_hash = test_torrent.pieces_hashes[test_piece_index]
-		test_download_location = test_torrent.download_location
+		test_download_location = test_torrent.download_root
 
 		test_piece_block = PieceMessage(index=0, begin=0, block=("A"*REQUEST_SIZE))
 		test_piece = Piece(test_piece_size, test_piece_index, test_piece_hash, test_download_location)
