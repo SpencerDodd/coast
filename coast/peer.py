@@ -5,7 +5,6 @@ from messages import ChokeMessage, UnchokeMessage, InterestedMessage, Interested
 	PieceMessage, HaveMessage, RequestMessage, BitfieldMessage, HandshakeMessage
 from bitarray import bitarray
 from constants import MAX_OUTSTANDING_REQUESTS, PEER_INACTIVITY_LIMIT
-from twisted.internet.defer import Deferred
 
 """
 This class represents a peer
@@ -13,10 +12,11 @@ This class represents a peer
 
 
 class Peer:
-	def __init__(self, peer_chunk):
+	def __init__(self, torrent, peer_chunk):
 		self.ip = ""
 		self.port = None
 		self.peer_id = None
+		self.torrent = torrent # TODO: maybe not best practice
 		self.info_hash = None
 		self.byte_string_chunk = self.initialize_with_chunk(peer_chunk)
 		self.bitfield = bitarray(endian="big")
@@ -37,11 +37,13 @@ class Peer:
 		}
 		self.handshake_exchanged = False
 		self.received_message_buffer = []
-		self.request_buffer = []
+		self.outgoing_messages_buffer = []
+		self.request_buffer = [] 				# redundant to self.outgoing_messages_buffer
 		self.previous_requests = []
 		self.time_of_last_message = time.time()
 		# for interaction with Torrent object
 		self.current_piece = None
+		self.blocks_downloaded = 0
 
 		# our control
 		self.am_choking = 1
@@ -86,7 +88,7 @@ class Peer:
 							"\n\tbitfield: {}".format(self.bitfield) + \
 							"\n\treceived messages: {}".format(
 								"\n\t".join(str(a) for a in self.received_message_buffer)) + \
-							"\n\ttime since last message: {}".format(self.time_since_last_message) + \
+							"\n\ttime since last message: {}".format(self.time_of_last_message) + \
 							"\n\tpiece: {}".format(self.current_piece) + \
 							"\n\tam choking: {}".format(self.am_choking) + \
 							"\n\tam interested: {}".format(self.am_interested) + \
@@ -105,8 +107,8 @@ class Peer:
 								"\n\t".join(str(a) for a in self.received_message_buffer)) + \
 							"\n\toutgoing messages: {}".format(
 								"\n\t".join(
-									a.debug_values() for a in self.outgoing_message_buffer)) + \
-							"\n\ttime since last message: {}".format(self.time_since_last_message) + \
+									a.debug_values() for a in self.outgoing_messages_buffer)) + \
+							"\n\ttime since last message: {}".format(self.time_of_last_message) + \
 							"\n\tpiece: \n{}".format(
 								indent_string(self.current_piece.debug_values(), 2)) + \
 							"\n\tam choking: {}".format(self.am_choking) + \
@@ -123,6 +125,8 @@ class Peer:
 		:param messages: Array of received messages from StreamProcessor
 		"""
 		for message in messages:
+			# DEBUG
+			# print ("New incoming message: {}".format(str(message)))
 			self.time_of_last_message = time.time()
 			self.MESSAGE_ID[message.get_message_id()](self, message)
 
@@ -186,7 +190,11 @@ class Peer:
 			# DEBUG
 			# print ("Not adding any new messages")
 			if self.current_piece is not None:
-				print ("BLOCK {}: {}".format(str(self.current_piece.get_index()).rjust(4), self.current_piece.progress_string()))
+				pass
+				# print ("BLOCK {}: {}".format(str(self.current_piece.get_index()).rjust(4), self.current_piece.progress_string()))
+			else:
+				print ("Peer still doesn't have a piece")
+			# DEBUG
 			# print ("Requests {} of {}".format(len(self.request_buffer), MAX_OUTSTANDING_REQUESTS))
 			# print ("Peer ({}) choking: {}".format(self.peer_id, self.peer_choking == 1))
 
@@ -208,6 +216,7 @@ class Peer:
 				a.get_begin()
 			) for a in self.previous_requests))
 		"""
+		self.outgoing_messages_buffer += outgoing_message_buffer
 		return outgoing_message_buffer
 
 	def received_bitfield(self):
@@ -237,6 +246,7 @@ class Peer:
 		:param next_piece: Piece to be downloaded
 		:return: Finished piece
 		"""
+		self.blocks_downloaded += 1
 		self.current_piece = next_piece
 
 		# Reset all fields that hold state data
@@ -297,6 +307,10 @@ class Peer:
 		self.received_message_buffer.append(new_have_message)
 		piece_index = new_have_message.get_piece_index()
 		print ("Peer ({}) has piece {}".format(self.peer_id, piece_index))
+		# set the bitarray to all 0s if it doesnt yet exist (to avoid bounds accession error)
+		if len(self.bitfield) == 0:
+			for i in range(0, len(self.torrent.pieces_hashes)):
+				self.bitfield.append(0)
 		self.bitfield[piece_index] = 1
 
 	def process_bitfield_message(self, new_bitfield_message):
@@ -333,7 +347,6 @@ class Peer:
 		# print ("Processing new block message")
 		self.received_message_buffer.append(new_piece_message)
 
-		# TODO: requests keep sending even if a piece hasn't been sent (requests buffer is empty)
 		for request_message in self.request_buffer:
 			if request_message.piece_message_matches_request(new_piece_message):
 				# DEBUG

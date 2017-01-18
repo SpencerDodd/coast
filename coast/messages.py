@@ -74,34 +74,39 @@ class StreamProcessor:
 			}
 		}
 
-	def parse_stream(self, stream_data):
-		self.stream += stream_data
+	def parse_stream(self, stream_data=None):
+		if stream_data is not None:
+			self.stream += stream_data
 
-		# DEBUG
-		# print ("Current Stream: {}".format(format_hex_output(self.stream)))
-
-		# check to make sure the stream has enough data in it to parse out the first message
-		required_bytes = self.message_headers[self.stream[0:5]]["byte_size"]
-
-		# DEBUG
-		# print ("Next message requires {} bytes".format(required_bytes))
-
-		if len(self.stream) < required_bytes:
-			pass
+		# if our stream could contain a complete message (keep-alive)... parse it
+		if len(self.stream) >= 4:
 			# DEBUG
-			# print ("---Waiting for more data to complete stream")
-			# print (format_hex_output(self.stream))
-		else:
-			try:
-				# debug
-				# print ("---Appending new complete message")
-				new_complete_message = self.message_headers[self.stream[:5]]["create_method"](data=self.stream[:required_bytes])
-				self.completed_stream_messages.append(new_complete_message)
-				self.stream = self.stream[required_bytes:]
-			except Exception as e:
-				print ("---Stream data was not properly formatted... Dropping stream")
-				print (traceback.format_exc(e))
-				self.stream = ""
+			# print ("Current Stream: {}".format(format_hex_output(self.stream)))
+
+			# check to make sure the stream has enough data in it to parse out the first message
+			required_bytes = self.message_headers[self.stream[0:5]]["byte_size"]
+
+			# DEBUG
+			# print ("Next message requires {} bytes".format(required_bytes))
+
+			if len(self.stream) < required_bytes:
+				pass
+				# DEBUG
+				# print ("---Waiting for more data to complete stream")
+				# print (format_hex_output(self.stream))
+			else:
+				try:
+					# DEBUG
+					# print ("---Appending new complete message")
+					new_complete_message = self.message_headers[self.stream[:5]]["create_method"](data=self.stream[:required_bytes])
+					self.completed_stream_messages.append(new_complete_message)
+					self.stream = self.stream[required_bytes:]
+					self.parse_stream()
+				except Exception as e:
+					# DEBUG
+					# print ("---Stream data was not properly formatted... Dropping stream")
+					# print (traceback.format_exc(e))
+					self.stream = ""
 
 	def get_complete_messages(self):
 		"""

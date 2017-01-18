@@ -1,9 +1,9 @@
 from twisted.internet.protocol import Protocol, ClientFactory
-from twisted.python.failure import Failure
-from twisted.internet.defer import Deferred
 import time
 from messages import StreamProcessor
 from constants import PEER_INACTIVITY_LIMIT
+
+import traceback
 
 """
 This file defines the coast TCP implementation of the BitTorrent protocol in interacting with
@@ -36,7 +36,12 @@ class PeerProtocol(Protocol):
 		# print ("ADDED THE CALLBACK")
 
 	def process_stream(self, data):
-		self.stream_processor.parse_stream(data)
+		# TODO: need to add a callback for peer getting data from the torrent. Running into a
+		# 	problem where the peer doesn't request because it gets the unchoke message before
+		# 	it has a piece assigned to it
+
+		# Could potentially handle this with logic flow inside of process_stream
+		self.stream_processor.parse_stream(stream_data=data)
 		self.peer.received_messages(self.stream_processor.get_complete_messages())
 
 		# purge the completed messages
@@ -73,6 +78,8 @@ class PeerProtocol(Protocol):
 			self.peer.update_last_contact()
 
 		self.outgoing_messages = []
+
+		self.factory.torrent.print_status()
 
 	def disconnect_with_inactivity(self):
 		# DEBUG

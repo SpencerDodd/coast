@@ -10,7 +10,7 @@ from test.test_data import test_bitfield, test_peer_chunk, test_torrent, test_pi
 
 class TestPeer(unittest.TestCase):
 	def test_initialization(self):
-		test_peer = Peer(test_peer_chunk)
+		test_peer = Peer(test_torrent, test_peer_chunk)
 		expected_peer_ip = "78.230.205.50"
 		expected_peer_port = 50500
 		self.assertEqual(expected_peer_ip, test_peer.ip)
@@ -22,7 +22,7 @@ class TestPeer(unittest.TestCase):
 		print ("TESTS FOR `test_bitfield`")
 		print ("-"*60)
 		print ("-"*60)
-		test_peer = Peer(test_peer_chunk)
+		test_peer = Peer(test_torrent, test_peer_chunk)
 		test_peer.peer_id = "test_bitfield"
 
 		test_peer.process_bitfield_message(BitfieldMessage(data=test_bitfield))
@@ -34,7 +34,7 @@ class TestPeer(unittest.TestCase):
 		print ("TESTS FOR `test_get_next_messages_outgoing_message_removal`")
 		print ("-"*60)
 		print ("-"*60)
-		test_peer = Peer(test_peer_chunk)
+		test_peer = Peer(test_torrent, test_peer_chunk)
 		test_peer.peer_id = "test_outgoing_messages"
 		print (test_peer.status())
 		test_peer.get_next_messages()
@@ -45,8 +45,3 @@ class TestPeer(unittest.TestCase):
 			hash=test_torrent.pieces_hashes[0],
 			download_location=test_torrent.download_root
 		)
-
-	def test_request_buffer(self):
-		test_peer = Peer(test_peer_chunk)
-
-

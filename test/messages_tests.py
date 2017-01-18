@@ -1,9 +1,8 @@
 import os
 import unittest
 
-from coast.helpermethods import convert_hex_to_int, convert_int_to_hex
 from test.test_data import test_captured_request, test_stream_processor_stream, \
-	test_piece_message, test_first_piece_message, test_torrent
+	test_bitfield_unchoke_miss, test_first_piece_message, test_torrent
 from coast.piece import Piece
 from coast.messages import HandshakeMessage, StreamProcessor, PieceMessage, RequestMessage
 from coast.constants import REQUEST_SIZE
@@ -90,3 +89,9 @@ class MessageTests(unittest.TestCase):
 		self.assertEqual(0, test_piece_message.get_index())
 		self.assertEqual(0, test_piece_message.get_begin())
 		self.assertEqual(REQUEST_SIZE, test_piece_message.get_length())
+
+	def test_bitfield_unchoke_miss(self):
+		test_stream_processor = StreamProcessor(test_torrent)
+		test_stream_processor.parse_stream(test_bitfield_unchoke_miss)
+
+		self.assertEqual(2, len(test_stream_processor.completed_stream_messages))

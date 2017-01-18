@@ -70,3 +70,34 @@ def make_dir(directory):
 	"""
 	if not os.path.exists(directory):
 		os.mkdir(directory)
+
+
+def tally_messages_by_type(list_of_messages):
+	"""
+	Tallies the number of each type of message present in a given list
+	:param list_of_messages: self-explanatory
+	:return: string
+	"""
+	output_string = ""
+	type_by_id = {
+		0: ["choke", 0],
+		1: ["unchoke", 0],
+		2: ["interested", 0],
+		3: ["not_interested", 0],
+		4: ["have", 0],
+		5: ["bitfield", 0],
+		6: ["request", 0],
+		7: ["piece", 0],
+		8: ["cancel", 0],
+		9: ["port", 0],
+		19: ["handshake", 0],
+		20: ["extended_handshake", 0],
+		255: ["keep_alive", 0]
+	}
+	for message in list_of_messages:
+		type_by_id[message.get_message_id()][1] += 1
+
+	for totals in type_by_id.values():
+		output_string += totals[0] + ": " + str(totals[1]) + ", "
+
+	return output_string

@@ -2,6 +2,7 @@ import os
 import urllib
 import unittest
 
+from coast.peer import Peer
 from coast.torrent import Torrent
 from coast.constants import ERROR_BYTESTRING_CHUNKSIZE
 from coast.helpermethods import one_directory_back, convert_int_to_hex
@@ -154,3 +155,40 @@ class TestTorrent(unittest.TestCase):
 				'\x04\x03\xfbG(\xbdx\x8f\xbc\xb6~\x87\xd6\xfe\xb2A\xef8\xc7Z-CO0001-5208360bf90d'
 
 		self.assertEqual(expected_info_hash, test_torrent.get_handshake())
+
+	def test_remove_active_peer(self):
+		test_tracker_response = {
+			'incomplete': 110,
+			'min interval': None,
+			'complete': 2957,
+			'failure reason': None,
+			'tracker id': None,
+			'interval': 1800,
+			'peers': u">\xd2\xf0\x9a\xceh\xa6F\xd3 \x1a\x90\x1f\xdc,\xb4" + \
+					 u"\xc8\xd5\xd5B\x1c\xc8\xc8\xdcWa\x01\xfb\xc8\xd5%\xbbp" + \
+					 u"\x9a\xc8\xd5^\x17\xdc\x8d\xd9\x03\xd1\x86_%\xc8\xd5\xb0" + \
+					 u"\xd7\x1e\xb2\xc8\xd5\xc0\x83,\x11\xd9$\xb26\xa5\xe9\x1a" + \
+					 u"\xe1\xb9A\x86Mb\xda\x8aD\x06\x0f\x1b\x15Og\xfa\x83M*Rd" + \
+					 u"\xf8\n\xc8\xd5\\\x8d\x95\x80\xc8\xd5\x18q\x95S\xc8\xd5N" + \
+					 u"\xc1X;\xe5\x05m\xbe/\xf2\xc8\xd5L\x1b>\x91\xc8\xd5\xb9" + \
+					 u"\x15\xd9!\xf0\x90C\xbc\x00\xbd#'%\x8f\xfc\x88H\xb7\x88<" + \
+					 u"\xab\xf1#'m|\t609%\x04\xec\x13\xc8\xd6M\xa4W>\xc0[\x88=|" + \
+					 u"\xb9om.\xe4\xe7>\xc8\xd5\xa3\xac\xdb0\x1bW\xb9/\x85C<f" + \
+					 u"\xb9-\xc3\xc3N'[M\x8c(\xc8\xd5\x96er\r\xdd\x0c%\xbbt8>" + \
+					 u"\x9a\xad\xff\xf7r\xfa}\x95[YL\xc8\xd5\x05\t\x99\xd6\x1a" + \
+					 u"\x89V\xab|6\xc3Pc\xc6\xabv\xef\xfa\xbc\x98`\x8dQ\xd4b" + \
+					 u"\xdc\x0c\x8c\xc8\xd5\x9c\xc4\xd7\xcd\x1a\xe1%\xcc#\x86" + \
+					 u"\xe3\x08U\x11\x1e\xcb\xee\x8dD\x8e%\x1f#'Ln\x85w\xf4)@[" + \
+					 u"\x06\xf4\xc8\xd5L\x11)\xc9\xe0^D\xe6Bb\xc91",
+			u'warning message': None}
+		test_torrent.tracker_response["peers"] = test_tracker_response["peers"]
+		test_torrent.populate_peers()
+		current_peer_index = 0
+
+		#test_peer = Peer(test_torrent.peers[0])
+
+		current_peer = test_torrent.peers[current_peer_index]
+		test_torrent.active_peers.append(current_peer)
+		test_torrent.connected_peers += 1
+
+		#test_torrent.remove_active_peer()
