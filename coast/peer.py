@@ -156,7 +156,8 @@ class Peer:
 		outgoing_message_buffer = []
 
 		if self.am_interested == 0:
-			print ("Adding Interested to outgoing messages")
+			# DEBUG
+			# print ("Adding Interested to outgoing messages")
 			outgoing_message_buffer.append(InterestedMessage())
 			self.am_interested = 1
 
@@ -191,31 +192,33 @@ class Peer:
 			# print ("Not adding any new messages")
 			if self.current_piece is not None:
 				pass
+				# DEBUG
 				# print ("BLOCK {}: {}".format(str(self.current_piece.get_index()).rjust(4), self.current_piece.progress_string()))
 			else:
-				print ("Peer still doesn't have a piece")
+				pass
+				# DEBUG
+				# print ("Peer still doesn't have a piece")
 			# DEBUG
 			# print ("Requests {} of {}".format(len(self.request_buffer), MAX_OUTSTANDING_REQUESTS))
 			# print ("Peer ({}) choking: {}".format(self.peer_id, self.peer_choking == 1))
 
 		# DEBUG
-		"""
-		print "Received: {}".format(
-			",".join(indent_string(str(a), 1) for a in self.received_message_buffer)
-		)
+		# print "Received: {}".format(
+		# 	",".join(indent_string(str(a), 1) for a in self.received_message_buffer)
+		# )
 		# DEBUG
-		print "Active Requests: {}".format(",".join(
-			"index: {} begin: {}".format(
-				a.get_index(),
-				a.get_begin()
-			) for a in self.request_buffer))
+		# print "Active Requests: {}".format(",".join(
+		# 	"index: {} begin: {}".format(
+		# 		a.get_index(),
+		# 		a.get_begin()
+		# 	) for a in self.request_buffer))
 		# DEBUG
-		print "Previous Requests: {}".format(",".join(
-			"index: {} begin: {}".format(
-				a.get_index(),
-				a.get_begin()
-			) for a in self.previous_requests))
-		"""
+		# print "Previous Requests: {}".format(",".join(
+		# 	"index: {} begin: {}".format(
+		# 		a.get_index(),
+		# 		a.get_begin()
+		# 	) for a in self.previous_requests))
+
 		self.outgoing_messages_buffer += outgoing_message_buffer
 		return outgoing_message_buffer
 
@@ -281,32 +284,38 @@ class Peer:
 		self.peer_id = new_handshake_message.get_peer_id()
 		self.info_hash = new_handshake_message.get_info_hash()
 		self.handshake_exchanged = True
-		print ("Handshake received from peer ({})".format(self.peer_id))
+		# DEBUG
+		# print ("Handshake received from peer ({})".format(self.peer_id))
 
 	def process_choke_message(self, new_choke_message):
 		self.received_message_buffer.append(new_choke_message)
-		print ("Choked by peer ({})".format(self.peer_id))
+		# DEBUG
+		# print ("Choked by peer ({})".format(self.peer_id))
 		self.peer_choking = 1
 
 	def process_unchoke_message(self, new_unchoke_message):
 		self.received_message_buffer.append(new_unchoke_message)
-		print ("Unchoked by peer ({})".format(self.peer_id))
+		# DEBUG
+		# print ("Unchoked by peer ({})".format(self.peer_id))
 		self.peer_choking = 0
 
 	def process_interested_message(self, new_interested_message):
 		self.received_message_buffer.append(new_interested_message)
-		print ("Peer ({}) is interested".format(self.peer_id))
+		# DEBUG
+		# print ("Peer ({}) is interested".format(self.peer_id))
 		self.peer_interested = 1
 
 	def process_not_interested_message(self, new_not_interested_message):
 		self.received_message_buffer.append(new_not_interested_message)
-		print ("Peer ({}) is not interested".format(self.peer_id))
+		# DEBUG
+		# print ("Peer ({}) is not interested".format(self.peer_id))
 		self.peer_interested = 0
 
 	def process_have_message(self, new_have_message):
 		self.received_message_buffer.append(new_have_message)
 		piece_index = new_have_message.get_piece_index()
-		print ("Peer ({}) has piece {}".format(self.peer_id, piece_index))
+		# DEBUG
+		# print ("Peer ({}) has piece {}".format(self.peer_id, piece_index))
 		# set the bitarray to all 0s if it doesnt yet exist (to avoid bounds accession error)
 		if len(self.bitfield) == 0:
 			for i in range(0, len(self.torrent.pieces_hashes)):
@@ -330,7 +339,8 @@ class Peer:
 		# length of bitfield = 380
 		# so each byte of the bitfield represents
 		self.received_message_buffer.append(new_bitfield_message)
-		print ("Processing bitfield from peer ({})".format(self.peer_id))
+		# DEBUG
+		# print ("Processing bitfield from peer ({})".format(self.peer_id))
 		self.bitfield.frombytes(new_bitfield_message.bitfield)
 		self.bitfield.tolist()
 

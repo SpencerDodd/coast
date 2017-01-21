@@ -2,6 +2,7 @@ from twisted.internet.protocol import Protocol, ClientFactory
 import time
 from messages import StreamProcessor
 from constants import PEER_INACTIVITY_LIMIT
+from helpermethods import format_hex_output
 
 import traceback
 
@@ -21,8 +22,9 @@ class PeerProtocol(Protocol):
 		self.outgoing_messages = []
 
 	def connectionMade(self):
-		print ("Connection made to peer ({}:{})".format(self.peer.ip, self.peer.port))
-		print ("Sending handshake: {}".format(self.factory.torrent.get_handshake()))
+		# DEBUG
+		# print ("Connection made to peer ({}:{})".format(self.peer.ip, self.peer.port))
+		# print ("Sending handshake: {}".format(self.factory.torrent.get_handshake()))
 
 		self.transport.write(self.factory.torrent.get_handshake())
 
@@ -43,6 +45,12 @@ class PeerProtocol(Protocol):
 		# Could potentially handle this with logic flow inside of process_stream
 		self.stream_processor.parse_stream(stream_data=data)
 		self.peer.received_messages(self.stream_processor.get_complete_messages())
+
+		# DEBUG
+		# print ("Complete messages:")
+		# print ("".join(str(a) for a in self.stream_processor.get_complete_messages()))
+		# print ("Incomplete messages ({} bytes):".format(len(self.stream_processor.stream)))
+		# print (format_hex_output(self.stream_processor.stream))
 
 		# purge the completed messages
 		self.stream_processor.purge_complete_messages()
@@ -91,10 +99,12 @@ class PeerProtocol(Protocol):
 		current_time = time.time()
 		if current_time - self.peer.time_of_last_message > PEER_INACTIVITY_LIMIT:
 			if not self.peer.handshake_exchanged:
-				print ("Disconnecting Peer ({}) due to inactivity (failed to exchange handshake)".format(self.peer.peer_id))
+				# DEBUG
+				# print ("Disconnecting Peer ({}) due to inactivity (failed to exchange handshake)".format(self.peer.peer_id))
 				self.transport.loseConnection()
 			else:
-				print ("Disconnecting Peer ({}) due to inactivity".format(self.peer.peer_id))
+				# DEBUG
+				# print ("Disconnecting Peer ({}) due to inactivity".format(self.peer.peer_id))
 				self.transport.loseConnection()
 		else:
 			pass
@@ -111,7 +121,8 @@ class PeerFactory(ClientFactory):
 		self.peer = peer
 
 	def startedConnecting(self, connector):
-		print ("Starting connection to peer ({}: {})".format(self.peer.ip, self.peer.port))
+		pass
+		# print ("Starting connection to peer ({}: {})".format(self.peer.ip, self.peer.port))
 
 	def buildProtocol(self, addr):
 		protocol = PeerProtocol(self, self.reactor, self.peer)
@@ -119,9 +130,12 @@ class PeerFactory(ClientFactory):
 		return protocol
 
 	def clientConnectionLost(self, connector, reason):
-		print ("Lost connection to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))
+		# DEBUG
+		# print ("Lost connection to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))
 		self.torrent.remove_active_peer(self.peer)
 		# TODO: remove the protocol from self.protocols
 
 	def clientConnectionFailed(self, connector, reason):
-		print ("Connection failed to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))
+		pass
+		# DEBUG
+		# print ("Connection failed to peer ({}:{}): {}".format(self.peer.ip, self.peer.port, reason))

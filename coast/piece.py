@@ -90,10 +90,10 @@ class Piece:
 	def data_matches_hash(self):
 		current_hash = hashlib.sha1("".join(byte for byte in self.data)).digest()
 		# DEBUG
-		print ("Comparing hashes for completed piece")
-		print ("Current hash: {}".format(format_hex_output(current_hash)))
-		print ("Piece hash:   {}".format(format_hex_output(self.hash)))
-		print ("Same? {}".format(current_hash == self.hash))
+		# print ("Comparing hashes for completed piece")
+		# print ("Current hash: {}".format(format_hex_output(current_hash)))
+		# print ("Piece hash:   {}".format(format_hex_output(self.hash)))
+		# print ("Same? {}".format(current_hash == self.hash))
 		return current_hash == self.hash
 
 	def progress_string(self):
