@@ -83,9 +83,11 @@ class Torrent:
 		}
 
 		# Status fields for the torrent
+		self.started = False
 		self.is_complete = False
 		self.last_request = None
 		self.last_announce = None
+		self.reannounce_limit = None
 		self.metadata_initialized = False
 		self.event_set = False
 		self.last_response_object = None
@@ -343,19 +345,25 @@ class Torrent:
 
 	def connect_to_peers(self):
 		""" Connects to the peers in the 'peers' field of the object"""
+		print ("Connect To Peers")
+		loops = 0
 		while len(self.active_peers) < MAX_PEERS:
-			# TODO: more advanced algo for picking peer to add
-			# 	maybe try all unique peers in peers before retrying peers that were disconnected
-			# 	after we've tried all peers, maybe we re-request the tracker and try to get
-			# 	an updated peer list, etc...
-			# DEBUG
-			# print ("trying to find a new peer (connected: {} / {})".format(len(self.active_peers), MAX_PEERS))
-			current_peer_index = self.connected_peers % len(self.peers)
-			current_peer = self.peers[current_peer_index]
-			if current_peer not in self.active_peers:
-				reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, reactor, current_peer))
-				self.active_peers.append(current_peer)
-				self.connected_peers += 1
+			if loops < len(self.peers):
+				loops += 1
+				# TODO: more advanced algo for picking peer to add
+				# 	maybe try all unique peers in peers before retrying peers that were disconnected
+				# 	after we've tried all peers, maybe we re-request the tracker and try to get
+				# 	an updated peer list, etc...
+				# DEBUG
+				print ("trying to find a new peer (connected: {} / {}) [loops: {}]".format(len(self.active_peers), MAX_PEERS, loops))
+				current_peer_index = self.connected_peers % len(self.peers)
+				current_peer = self.peers[current_peer_index]
+				if current_peer not in self.active_peers:
+					reactor.connectTCP(current_peer.ip, current_peer.port, PeerFactory(self, reactor, current_peer))
+					self.active_peers.append(current_peer)
+					self.connected_peers += 1
+			else:
+				break
 
 	def start_torrent(self):
 		""" Starts the torrent by connecting to the peers and running the twisted reactor"""
@@ -400,7 +408,7 @@ class Torrent:
 		:return: void
 		"""
 		# DEBUG
-		# print ("Removing peer from active list ({})".format(peer.peer_id))
+		print ("Removing peer from active list ({})".format(peer.peer_id))
 		self.active_peers.remove(peer)
 		if peer.current_piece is not None:
 			try:
@@ -408,16 +416,17 @@ class Torrent:
 			except Exception as e:
 				pass
 				# DEBUG
-				# error_message = "Problem removing piece" + \
-				# 	"\nPiece: {}".format(peer.current_piece.get_index()) + \
-				# 	"\nAssigned: {}".format(", ".join(str(c) for c in self.assigned_pieces))
+				error_message = "Problem removing piece" + \
+					"\nPiece: {}".format(peer.current_piece.get_index()) + \
+					"\nAssigned: {}".format(", ".join(str(c) for c in self.assigned_pieces))
 
 				# TODO: if we don't try-block wrap...why is the index being removed before this piece is done???
 				# 	or is this an index accession error because another peer is erroneously removing
 				# 	our piece? Or is this because we assigned the same piece to more than one peer?
-				# print (error_message)
+				print (error_message)
 
-		# print ("Adding a new peer")
+		# DEBUG
+		print ("Remove active peer: Adding a new peer")
 		self.connect_to_peers()
 
 	def process_next_round(self, peer):
@@ -437,22 +446,28 @@ class Torrent:
 				self.exchange_completed_piece_for_new_piece(peer)
 			else:
 				# DEBUG
-				# print ("Piece was corrupted... Trying again")
+				print ("Piece was corrupted... Trying again")
 				peer.set_next_piece(piece_to_save.reset())
+
+			self.update_completion_status()
 
 		elif peer.current_piece is None and peer.received_bitfield():
 			# DEBUG
-			# print ("Peer has bitfield but no piece... Assigning a piece")
+			print ("Peer has bitfield but no piece... Assigning a piece")
 			peer.set_piece(self.get_next_piece_for_download(peer))
 
 		elif not peer.received_bitfield():
 			pass
 			# DEBUG
-			# print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
+			print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
 		else:
 			pass
 			# DEBUG
-			# print ("Proceeding as usual... No update from torrent")
+			print ("Proceeding as usual... No update from torrent")
+
+	# TODO
+	def update_completion_status(self):
+		pass
 
 	def save_completed_peer_piece_to_disk(self, piece_to_save):
 		"""
@@ -473,42 +488,51 @@ class Torrent:
 
 	def exchange_completed_piece_for_new_piece(self, peer):
 		# DEBUG
-		# print ("Exchanging piece for new piece")
-		# print ("Current piece: {}".format(peer.current_piece.get_index()))
+		print ("Exchanging piece for new piece")
+		print ("Current piece: {}".format(peer.current_piece.get_index()))
 		# self.assigned_pieces.remove(peer.current_piece.get_index())
 		self.bitfield[peer.current_piece.get_index()] = 1
 		self.save_completed_peer_piece_to_disk(peer.current_piece)
 		next_piece = self.get_next_piece_for_download(peer)
 		# DEBUG
-		# print ("New piece: {}".format(next_piece.get_index()))
+		print ("New piece: {}".format(next_piece.get_index()))
 		peer.set_next_piece(next_piece)
 
 	def get_next_piece_for_download(self, peer):
 		# DEBUG
-		# print ("Getting peer a new piece")
+		print ("Getting peer a new piece")
 		for index, bit in enumerate(self.bitfield):
 			# DEBUG
-			# print ("current_index: {}\nassigned: {}\nbitfield at index: {}".format(index,", ".join(str(c) for c in self.assigned_pieces), self.bitfield[index]))
+			print ("current_index: {}\nassigned: {}\nbitfield at index: {}".format(index,", ".join(str(c) for c in self.assigned_pieces), self.bitfield[index]))
 			if index not in self.assigned_pieces and self.bitfield[index] == 0:
 				# DEBUG
-				# print ("Giving peer piece {} for download".format(index))
+				print ("Giving peer piece {} for download".format(index))
 				next_hash = self.pieces_hashes[index]
 				next_piece = Piece(self.metadata["piece_length"], index, next_hash, self.download_root)
 				self.assigned_pieces.append(index)
 				# DEBUG
-				# print ("Assigned: {}".format(",".join(str(x) for x in self.assigned_pieces)))
+				print ("Assigned: {}".format(",".join(str(x) for x in self.assigned_pieces)))
 				return next_piece
 		# DEBUG
-		# print ("Finished giving peer a new piece")
+		print ("Finished giving peer a new piece")
 
+	def main_control_loop(self):
+		"""
+		Main control flow is as follows:
+			1. check if torrent is done
+				a. if so compile each file piece into it's parent file
+			2. check if we can re-announce and get more peers
 
-if __name__ == "__main__":
-	test_peer_id = "-CO0001-5208360bf90d"
-	test_port = 6881
-	root_dir = one_directory_back(os.getcwd())
-	test_data_directory = os.path.join(root_dir, "test/")
-	test_torrent_file = "ubuntu-16.10-desktop-amd64.iso.torrent"
-	test_torrent_file_path = os.path.join(test_data_directory, test_torrent_file)
-	test_torrent = Torrent(test_peer_id, test_port, test_torrent_file_path)
+		:return:
+		"""
+		if not self.started:
+			self.start_torrent()
+			self.started = True
 
-	test_torrent.start_torrent()
+		if self.is_complete:
+			pass
+			# compile pieces into file
+			# update torrent status? (or do that in core)
+
+		if (time.time() - self.last_announce) > self.reannounce_limit:
+			pass
