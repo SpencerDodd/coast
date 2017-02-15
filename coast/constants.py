@@ -32,3 +32,6 @@ ACTIVITY_COMPLETED = 				4
 
 # Debugging
 DEBUG = True
+
+NEW_WINDOW_X = 500
+NEW_WINDOW_Y = 0

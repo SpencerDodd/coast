@@ -7,7 +7,8 @@ import tkFileDialog
 from Tkinter import Tk, Frame
 import threading
 from constants import CLIENT_ID_STRING, CURRENT_VERSION, DEBUG, RUNNING_PORT, ARGUMENT_PARSING_ERROR_MESSAGE,\
-	ACTIVITY_COMPLETED, ACTIVITY_INITIALIZE_CONTINUE, ACTIVITY_INITIALIZE_NEW, ACTIVITY_DOWNLOADING, ACTIVITY_STOPPED
+	ACTIVITY_COMPLETED, ACTIVITY_INITIALIZE_CONTINUE, ACTIVITY_INITIALIZE_NEW, ACTIVITY_DOWNLOADING, ACTIVITY_STOPPED,\
+	NEW_WINDOW_X, NEW_WINDOW_Y
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -29,7 +30,7 @@ class Core:
 		Key value is the name of the torrent file
 		Value is a Torrent object
 		"""
-		self._active_torrents = []
+		self.active_torrents = []
 		self._peer_id = self.generate_peer_id()
 		self._coast_port = self.get_open_port()
 		self.download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
@@ -84,14 +85,14 @@ class Core:
 		new_torrent = Torrent(self._peer_id, self._coast_port, torrent_file_path)
 		# DEBUG
 		print ("Adding torrent to core: {}".format(new_torrent.torrent_name))
-		self._active_torrents.append(new_torrent)
+		self.active_torrents.append(new_torrent)
 
 	# TODO
 	def add_torrent_from_magnet(self):
 		pass
 
 	def control_torrents(self):
-		for torrent in self._active_torrents:
+		for torrent in self.active_torrents:
 			if torrent.activity_status == ACTIVITY_COMPLETED:
 				sys.stdout.flush()
 				print (torrent.get_status(display_status=False))
@@ -109,8 +110,11 @@ class Core:
 			if torrent.activity_status == ACTIVITY_STOPPED:
 				print ("Torrent is stopped")
 
+	def update_displayed_torrent(self, index):
+		self.displayed_torrent = index
+
 	def show_display(self):
-		display_torrent = self._active_torrents[self.displayed_torrent]
+		display_torrent = self.active_torrents[self.displayed_torrent]
 		print (display_torrent.get_status(display_status=False))
 	'''
 	We need to start a threaded handler for the active torrents. This way we can control program flow and torrent
@@ -122,18 +126,21 @@ class Core:
 		new_torrent = Torrent(self._peer_id, self._coast_port, str(torrent_file_path))
 		# DEBUG
 		print ("Adding torrent to core: {}".format(new_torrent.torrent_name))
-		self._active_torrents.append(new_torrent)
-		self.run_thread = threading.Thread(target=self.control_torrents)
-		self.run_thread.start()
+		self.active_torrents.append(new_torrent)
+		self.run()
 		while True:
 			self.show_display()
 
 	def run_gui(self):
 		root = Tk()
-		root.geometry("700x570+72500+0")
-		root.attributes("-topmost", True)
+		root.geometry("700x570+{}+{}".format(NEW_WINDOW_X, NEW_WINDOW_Y))
+		#root.attributes("-topmost", True)
 		gui = GUI(root, self)
 		gui.mainloop()
+
+	def run(self):
+		self.run_thread = threading.Thread(target=self.control_torrents)
+		self.run_thread.start()
 
 
 def main(argv):
