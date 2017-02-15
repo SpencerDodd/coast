@@ -383,10 +383,7 @@ class Torrent:
 		self.activity_status = ACTIVITY_DOWNLOADING
 		self.send_tracker_request()
 		self.connect_to_peers()
-		# DEBUG
-		#l = task.LoopingCall(self.main_control_loop)
-		#l.start(0.01)
-		reactor.run()
+		reactor.run(installSignalHandlers=False)
 
 	def stop_torrent(self):
 		""" Stops the torrent by stopping the twisted reactor"""

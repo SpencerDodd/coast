@@ -1,15 +1,18 @@
 from __future__ import print_function
 import os
 import sys
+import getopt
 import hashlib
 import tkFileDialog
 from Tkinter import Tk, Frame
 import threading
-from constants import CLIENT_ID_STRING, CURRENT_VERSION, DEBUG, RUNNING_PORT,\
+from constants import CLIENT_ID_STRING, CURRENT_VERSION, DEBUG, RUNNING_PORT, ARGUMENT_PARSING_ERROR_MESSAGE,\
 	ACTIVITY_COMPLETED, ACTIVITY_INITIALIZE_CONTINUE, ACTIVITY_INITIALIZE_NEW, ACTIVITY_DOWNLOADING, ACTIVITY_STOPPED
-from helpermethods import one_directory_back
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from coast.torrent import Torrent
+from coast.gui import GUI
 from coast.constants import LISTENING_PORT_MIN
 from coast.constants import LISTENING_PORT_MAX
 
@@ -18,9 +21,8 @@ This is the core of the torrent client.
 """
 
 
-class Core(Frame):
-	def __init__(self, parent):
-		Frame.__init__(self, parent)
+class Core:
+	def __init__(self):
 		"""
 		Dictionary of active torrents
 		
@@ -72,13 +74,12 @@ class Core(Frame):
 		
 		peer_id = "-{}{}-{}".format(CLIENT_ID_STRING,CURRENT_VERSION,peer_id_sub)
 		# DEBUG
-		print ("Generated Peer ID: {}".format(peer_id))
+		# print ("Generated Peer ID: {}".format(peer_id))
 		return peer_id
 
 	def add_torrent_from_browser(self):
-		"""
-		Adds a torrent to the core. Add with a magnet link, or from a file
-		"""
+		""" Adds a torrent to the core. Add with a magnet link, or from a file"""
+
 		torrent_file_path = tkFileDialog.askopenfilename(parent=self, initialdir=self.download_dir, title="Select torrent file to download")
 		new_torrent = Torrent(self._peer_id, self._coast_port, torrent_file_path)
 		# DEBUG
@@ -90,44 +91,78 @@ class Core(Frame):
 		pass
 
 	def control_torrents(self):
+		for torrent in self._active_torrents:
+			if torrent.activity_status == ACTIVITY_COMPLETED:
+				sys.stdout.flush()
+				print (torrent.get_status(display_status=False))
+				torrent.compile_file_from_pieces(preserve_tmp=DEBUG)
+				torrent.stop_torrent()
 
+			if torrent.activity_status == ACTIVITY_INITIALIZE_NEW or ACTIVITY_INITIALIZE_CONTINUE:
+				if not torrent.tracker_request_sent:
+					torrent.start_torrent()
+
+			if torrent.activity_status == ACTIVITY_DOWNLOADING:
+				torrent.update_completion_status()
+				# torrent.reannounce_if_possible
+
+			if torrent.activity_status == ACTIVITY_STOPPED:
+				print ("Torrent is stopped")
+
+	def show_display(self):
 		display_torrent = self._active_torrents[self.displayed_torrent]
-		if display_torrent.activity_status == ACTIVITY_COMPLETED:
-			print (display_torrent.get_status(display_status=False))
-			display_torrent.compile_file_from_pieces(preserve_tmp=DEBUG)
-			display_torrent.stop_torrent()
-
-		if display_torrent.activity_status == ACTIVITY_INITIALIZE_NEW or ACTIVITY_INITIALIZE_CONTINUE:
-			if not display_torrent.tracker_request_sent:
-				display_torrent.start_torrent()
-
-		if display_torrent.activity_status == ACTIVITY_DOWNLOADING:
-			display_torrent.update_completion_status()
-			print (display_torrent.get_status(display_status=False))
-
-			# torrent.reannounce_if_possible
-
-		if display_torrent.activity_status == ACTIVITY_STOPPED:
-			print ("Torrent is stopped")
-
-	# TODO
+		print (display_torrent.get_status(display_status=False))
 	'''
 	We need to start a threaded handler for the active torrents. This way we can control program flow and torrent
 	status without being blocked by Twisted event handling.
 	'''
-	def run(self):
+	def run_cmd(self):
 		print ("Running the core.")
+		torrent_file_path = raw_input("Please enter the filepath of the .torrent file you would like to download: ")
+		new_torrent = Torrent(self._peer_id, self._coast_port, str(torrent_file_path))
+		# DEBUG
+		print ("Adding torrent to core: {}".format(new_torrent.torrent_name))
+		self._active_torrents.append(new_torrent)
+		self.run_thread = threading.Thread(target=self.control_torrents)
+		self.run_thread.start()
 		while True:
-			self.run_thread = threading.Thread(target=self.control_torrents)
-			self.run_thread.start()
+			self.show_display()
+
+	def run_gui(self):
+		root = Tk()
+		root.geometry("700x570+72500+0")
+		root.attributes("-topmost", True)
+		gui = GUI(root, self)
+		gui.mainloop()
 
 
-def main():
-	root = Tk()
-	root.withdraw()
-	test_core = Core(root)
-	test_core.add_torrent_from_browser()
-	test_core.run()
+def main(argv):
+	run_core = Core()
+	try:
+		opts, args = getopt.getopt(argv,"hm:",["mode="])
+	except getopt.GetoptError:
+		print ("Parsing Error")
+		print (ARGUMENT_PARSING_ERROR_MESSAGE)
+		sys.exit(2)
+	if len(argv) < 1:
+		print ("Please enter a runmode argument")
+		print (ARGUMENT_PARSING_ERROR_MESSAGE)
+	for opt, arg in opts:
+		if opt == '-h':
+			print ("Usage:")
+			print (ARGUMENT_PARSING_ERROR_MESSAGE)
+			sys.exit()
+		elif opt in ("-m", "--mode"):
+			if arg == "cmd":
+				run_core.run_cmd()
+			if arg == "gui":
+				run_core.run_gui()
+			else:
+				print ("Invalid runmode")
+				print (ARGUMENT_PARSING_ERROR_MESSAGE)
+		else:
+			print (ARGUMENT_PARSING_ERROR_MESSAGE)
+
 
 if __name__ == "__main__":
-	main()
+	main(sys.argv[1:])
