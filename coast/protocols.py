@@ -38,9 +38,6 @@ class PeerProtocol(Protocol):
 		# print ("ADDED THE CALLBACK")
 
 	def process_stream(self, data):
-		# TODO: need to add a callback for peer getting data from the torrent. Running into a
-		# 	problem where the peer doesn't request because it gets the unchoke message before
-		# 	it has a piece assigned to it
 
 		# Could potentially handle this with logic flow inside of process_stream
 		self.stream_processor.parse_stream(stream_data=data)
@@ -87,7 +84,7 @@ class PeerProtocol(Protocol):
 
 		self.outgoing_messages = []
 
-		self.factory.torrent.print_status()
+		#self.factory.torrent.print_status()
 
 	def disconnect_with_inactivity(self):
 		# DEBUG

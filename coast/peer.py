@@ -10,6 +10,7 @@ from constants import MAX_OUTSTANDING_REQUESTS, PEER_INACTIVITY_LIMIT
 This class represents a peer
 """
 
+# TODO download speed (blocks / time period) -> kb-mb/s
 
 class Peer:
 	def __init__(self, torrent, peer_chunk):

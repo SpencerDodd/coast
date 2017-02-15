@@ -1,10 +1,12 @@
+from __future__ import print_function
 import os
 import sys
 import hashlib
 import tkFileDialog
 from Tkinter import Tk, Frame
-import socket
-from constants import CLIENT_ID_STRING, CURRENT_VERSION
+import threading
+from constants import CLIENT_ID_STRING, CURRENT_VERSION, DEBUG, RUNNING_PORT,\
+	ACTIVITY_COMPLETED, ACTIVITY_INITIALIZE_CONTINUE, ACTIVITY_INITIALIZE_NEW, ACTIVITY_DOWNLOADING, ACTIVITY_STOPPED
 from helpermethods import one_directory_back
 
 from coast.torrent import Torrent
@@ -29,6 +31,9 @@ class Core(Frame):
 		self._peer_id = self.generate_peer_id()
 		self._coast_port = self.get_open_port()
 		self.download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+		self.run_thread = None
+
+		self.displayed_torrent = 0
 
 	def get_open_port(self):
 		"""
@@ -48,8 +53,12 @@ class Core(Frame):
 
 		# ask for another port if none are open
 		"""
-		user_port = input("Please enter a port to run coast on (Standard: 6881-6889): ")
-		return user_port
+		if not RUNNING_PORT:
+			user_port = input("Please enter a port to run coast on (Standard: 6881-6889): ")
+			return user_port
+
+		else:
+			return RUNNING_PORT
 
 	def generate_peer_id(self):
 		"""
@@ -80,15 +89,37 @@ class Core(Frame):
 	def add_torrent_from_magnet(self):
 		pass
 
+	def control_torrents(self):
+
+		display_torrent = self._active_torrents[self.displayed_torrent]
+		if display_torrent.activity_status == ACTIVITY_COMPLETED:
+			print (display_torrent.get_status(display_status=False))
+			display_torrent.compile_file_from_pieces(preserve_tmp=DEBUG)
+			display_torrent.stop_torrent()
+
+		if display_torrent.activity_status == ACTIVITY_INITIALIZE_NEW or ACTIVITY_INITIALIZE_CONTINUE:
+			if not display_torrent.tracker_request_sent:
+				display_torrent.start_torrent()
+
+		if display_torrent.activity_status == ACTIVITY_DOWNLOADING:
+			display_torrent.update_completion_status()
+			print (display_torrent.get_status(display_status=False))
+
+			# torrent.reannounce_if_possible
+
+		if display_torrent.activity_status == ACTIVITY_STOPPED:
+			print ("Torrent is stopped")
+
 	# TODO
 	'''
-	We need to start handling torrents here including handling for tracker requests / re-announces for updated peer
-	lists, and final file compilation from downloaded parts
+	We need to start a threaded handler for the active torrents. This way we can control program flow and torrent
+	status without being blocked by Twisted event handling.
 	'''
 	def run(self):
+		print ("Running the core.")
 		while True:
-			for torrent in self._active_torrents:
-				torrent.main_control_loop()
+			self.run_thread = threading.Thread(target=self.control_torrents)
+			self.run_thread.start()
 
 
 def main():

@@ -9,7 +9,9 @@ import requests
 import traceback
 from twisted.internet import reactor, task
 
-from constants import MAX_PEERS, ERROR_BYTESTRING_CHUNKSIZE
+from constants import MAX_PEERS, ERROR_BYTESTRING_CHUNKSIZE, DEBUG, \
+	ACTIVITY_INITIALIZE_NEW, ACTIVITY_INITIALIZE_CONTINUE, ACTIVITY_DOWNLOADING, ACTIVITY_STOPPED, ACTIVITY_COMPLETED, \
+	RESPONSE_TIMEOUT
 from peer import Peer
 from piece import Piece
 from messages import HandshakeMessage
@@ -83,7 +85,8 @@ class Torrent:
 		}
 
 		# Status fields for the torrent
-		self.started = False
+		self.activity_status = ACTIVITY_INITIALIZE_NEW
+		self.tracker_request_sent = False
 		self.is_complete = False
 		self.last_request = None
 		self.last_announce = None
@@ -194,6 +197,9 @@ class Torrent:
 
 		piece_files = [f for f in os.listdir(self.temporary_download_location) if
 					   os.path.isfile(os.path.join(self.temporary_download_location, f))]
+
+		if len(piece_files) > 0:
+			self.activity_status = ACTIVITY_INITIALIZE_CONTINUE
 		for file_name in piece_files:
 			self.bitfield[int(file_name.split(".")[0])] = 1
 
@@ -263,7 +269,7 @@ class Torrent:
 		a '?' after the announce URL, followed by 'param=value' sequences separated
 		by '&').
 		"""
-
+		print ("Getting tracker request")
 		request_text = "{}?info_hash={}".format(self._announce, self.tracker_request["info_hash"])
 
 		for request_field in self.tracker_request.keys():
@@ -338,14 +344,20 @@ class Torrent:
 		return handshake_message
 
 	def send_tracker_request(self):
-		""" Sends the request to the tracker for the given torrent"""
+		""" Sends the request to the tracker for the given torrent. Re-sends if no response in RESPONSE_TIMEOUT secs"""
+		self.tracker_request_sent = True
 		torrent_request = self.get_tracker_request()
-		response = requests.get(torrent_request)
-		self.process_tracker_response(response)
+		try:
+			response = requests.get(torrent_request, timeout=RESPONSE_TIMEOUT)
+			self.process_tracker_response(response)
+
+		except requests.exceptions.Timeout:
+			print ("Tracker Request timed out ({} seconds). Re-requesting".format(RESPONSE_TIMEOUT))
+			self.send_tracker_request()
 
 	def connect_to_peers(self):
 		""" Connects to the peers in the 'peers' field of the object"""
-		print ("Connect To Peers")
+		#print ("Connecting To Peers")
 		loops = 0
 		while len(self.active_peers) < MAX_PEERS:
 			if loops < len(self.peers):
@@ -355,7 +367,7 @@ class Torrent:
 				# 	after we've tried all peers, maybe we re-request the tracker and try to get
 				# 	an updated peer list, etc...
 				# DEBUG
-				print ("trying to find a new peer (connected: {} / {}) [loops: {}]".format(len(self.active_peers), MAX_PEERS, loops))
+				#print ("trying to find a new peer (connected: {} / {}) [loops: {}]".format(len(self.active_peers), MAX_PEERS, loops))
 				current_peer_index = self.connected_peers % len(self.peers)
 				current_peer = self.peers[current_peer_index]
 				if current_peer not in self.active_peers:
@@ -367,39 +379,55 @@ class Torrent:
 
 	def start_torrent(self):
 		""" Starts the torrent by connecting to the peers and running the twisted reactor"""
+		print ("Starting torrent: {}".format(self.torrent_name))
+		self.activity_status = ACTIVITY_DOWNLOADING
 		self.send_tracker_request()
 		self.connect_to_peers()
 		# DEBUG
-		# l = task.LoopingCall(self.peer_activity_update)
-		# l.start(1.0)
+		#l = task.LoopingCall(self.main_control_loop)
+		#l.start(0.01)
 		reactor.run()
+
+	def stop_torrent(self):
+		""" Stops the torrent by stopping the twisted reactor"""
+		print ("Stopping torrent: {}".format(self.torrent_name))
+		reactor.stop()
+
 
 	def get_progress(self):
 		pieces_finished = self.bitfield.count(1)
 		return float(pieces_finished) / len(self.bitfield) * 100
 
-	def print_status(self):
+	def get_status(self, display_status=True):
 		sys.stdout.flush()
 		status_string = "Torrent Progress\n" + \
-			u"{}% {}\n".format("{0:.2f}".format(self.get_progress()).rjust(6), int(self.get_progress()) * u'\u2588')
-		status_string += "ACTIVE PEERS\n"
-		for peer in self.active_peers:
-			if peer.current_piece is not None:
-				# DEBUG
-				status_string += "Peer: {} ".format(str(peer.ip).rjust(15)) + \
-						" Recv: {}".format(str(len(peer.received_message_buffer)).rjust(4)) + \
-						" Sent: {}".format(str(len(peer.outgoing_messages_buffer)).rjust(4)) + \
-						" Total: {}mb ".format(str(float(peer.blocks_downloaded) / 2).rjust(7)) + \
-						" Block {}: {}\n".format(str(peer.current_piece.get_index()).rjust(4), peer.current_piece.progress_string())
+				u"{}% {}\n".format("{0:.2f}".format(self.get_progress()).rjust(6), int(self.get_progress()) * u'\u2588')
+		if DEBUG:
+			status_string += "ACTIVE PEERS\n"
+			for peer in self.active_peers:
+				if peer.current_piece is not None:
+					# DEBUG
+					status_string += u"Peer: {} ".format(str(peer.ip).rjust(15)) + \
+							u" Recv: {}".format(str(len(peer.received_message_buffer)).rjust(4)) + \
+							u" Sent: {}".format(str(len(peer.outgoing_messages_buffer)).rjust(4)) + \
+							u" Total: {}mb ".format(str(float(peer.blocks_downloaded) / 2).rjust(7)) + \
+							u" Block {}: {}\n".format(str(peer.current_piece.get_index()).rjust(4), peer.current_piece.progress_string())
+				else:
+					status_string += u"Peer: {} ".format(str(peer.ip).rjust(15)) + \
+						   u" Recv: {}".format(str(0).rjust(4)) + \
+						   u" Sent: {}".format(str(0).rjust(4)) + \
+						   u" Total: {}mb ".format(str(float(0)).rjust(7)) + \
+						   u" Block {}: {}\n".format("None".rjust(4), "0.0%".rjust(6))
+			if display_status:
+				print (status_string)
 			else:
-				status_string += "Peer: {} ".format(str(peer.ip).rjust(15)) + \
-					   " Recv: {}".format(str(0).rjust(4)) + \
-					   " Sent: {}".format(str(0).rjust(4)) + \
-					   " Total: {}mb ".format(str(float(0)).rjust(7)) + \
-					   " Block {}: {}\n".format("None".rjust(4), "0.0%".rjust(6))
+				return status_string
 
-		print (status_string)
-		# print (status_string, end="\r")
+		else:
+			if display_status:
+				print (status_string)
+			else:
+				return status_string
 
 	def remove_active_peer(self, peer):
 		"""
@@ -408,7 +436,7 @@ class Torrent:
 		:return: void
 		"""
 		# DEBUG
-		print ("Removing peer from active list ({})".format(peer.peer_id))
+		#print ("Removing peer from active list ({})".format(peer.peer_id))
 		self.active_peers.remove(peer)
 		if peer.current_piece is not None:
 			try:
@@ -416,17 +444,17 @@ class Torrent:
 			except Exception as e:
 				pass
 				# DEBUG
-				error_message = "Problem removing piece" + \
-					"\nPiece: {}".format(peer.current_piece.get_index()) + \
-					"\nAssigned: {}".format(", ".join(str(c) for c in self.assigned_pieces))
+				#error_message = "Problem removing piece" + \
+				#	"\nPiece: {}".format(peer.current_piece.get_index()) + \
+				#	"\nAssigned: {}".format(", ".join(str(c) for c in self.assigned_pieces))
 
 				# TODO: if we don't try-block wrap...why is the index being removed before this piece is done???
 				# 	or is this an index accession error because another peer is erroneously removing
 				# 	our piece? Or is this because we assigned the same piece to more than one peer?
-				print (error_message)
+				#print (error_message)
 
 		# DEBUG
-		print ("Remove active peer: Adding a new peer")
+		#print ("Remove active peer: Adding a new peer")
 		self.connect_to_peers()
 
 	def process_next_round(self, peer):
@@ -439,35 +467,37 @@ class Torrent:
 		"""
 		if peer.current_piece is not None and peer.current_piece.is_complete:
 			# DEBUG
-			# print ("Peer has completed downloading piece... Assigning a new piece")
+			#print ("Peer has completed downloading piece... Assigning a new piece")
 			# self.save_completed_peer_piece_to_disk(peer.set_next_piece(self.get_next_piece_for_download(peer)))
 			piece_to_save = peer.current_piece
 			if piece_to_save.data_matches_hash():
 				self.exchange_completed_piece_for_new_piece(peer)
 			else:
 				# DEBUG
-				print ("Piece was corrupted... Trying again")
+				#print ("Piece was corrupted... Trying again")
 				peer.set_next_piece(piece_to_save.reset())
 
 			self.update_completion_status()
 
 		elif peer.current_piece is None and peer.received_bitfield():
 			# DEBUG
-			print ("Peer has bitfield but no piece... Assigning a piece")
+			#print ("Peer has bitfield but no piece... Assigning a piece")
 			peer.set_piece(self.get_next_piece_for_download(peer))
 
 		elif not peer.received_bitfield():
 			pass
 			# DEBUG
-			print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
+			#print ("Peer has no bitfield... Waiting for bitfield to give piece assignment")
 		else:
 			pass
 			# DEBUG
-			print ("Proceeding as usual... No update from torrent")
+			#print ("Proceeding as usual... No update from torrent")
 
 	# TODO
 	def update_completion_status(self):
-		pass
+		if int(self.get_progress()) == 100:
+			self.is_complete = True
+			self.activity_status = ACTIVITY_COMPLETED
 
 	def save_completed_peer_piece_to_disk(self, piece_to_save):
 		"""
@@ -488,51 +518,79 @@ class Torrent:
 
 	def exchange_completed_piece_for_new_piece(self, peer):
 		# DEBUG
-		print ("Exchanging piece for new piece")
-		print ("Current piece: {}".format(peer.current_piece.get_index()))
+		#print ("Exchanging piece for new piece")
+		#print ("Current piece: {}".format(peer.current_piece.get_index()))
 		# self.assigned_pieces.remove(peer.current_piece.get_index())
 		self.bitfield[peer.current_piece.get_index()] = 1
 		self.save_completed_peer_piece_to_disk(peer.current_piece)
 		next_piece = self.get_next_piece_for_download(peer)
 		# DEBUG
-		print ("New piece: {}".format(next_piece.get_index()))
+		#print ("New piece: {}".format(next_piece.get_index()))
 		peer.set_next_piece(next_piece)
 
 	def get_next_piece_for_download(self, peer):
 		# DEBUG
-		print ("Getting peer a new piece")
+		#print ("Getting peer a new piece")
 		for index, bit in enumerate(self.bitfield):
 			# DEBUG
-			print ("current_index: {}\nassigned: {}\nbitfield at index: {}".format(index,", ".join(str(c) for c in self.assigned_pieces), self.bitfield[index]))
+			#print ("current_index: {}\nassigned: {}\nbitfield at index: {}".format(index,", ".join(str(c) for c in self.assigned_pieces), self.bitfield[index]))
 			if index not in self.assigned_pieces and self.bitfield[index] == 0:
 				# DEBUG
-				print ("Giving peer piece {} for download".format(index))
+				#print ("Giving peer piece {} for download".format(index))
 				next_hash = self.pieces_hashes[index]
 				next_piece = Piece(self.metadata["piece_length"], index, next_hash, self.download_root)
 				self.assigned_pieces.append(index)
 				# DEBUG
-				print ("Assigned: {}".format(",".join(str(x) for x in self.assigned_pieces)))
+				#print ("Assigned: {}".format(",".join(str(x) for x in self.assigned_pieces)))
 				return next_piece
 		# DEBUG
-		print ("Finished giving peer a new piece")
+		#print ("Finished giving peer a new piece")
 
+	def compile_file_from_pieces(self, preserve_tmp=False):
+		output_file_path = os.path.join(one_directory_back(self.temporary_download_location), self.torrent_name)
+		print ("Compiling completed pieces into {}".format(output_file_path))
+		with open(output_file_path, 'w') as output_file:
+			for piece in sorted(os.listdir(self.temporary_download_location)):
+				piece_path = os.path.join(self.temporary_download_location, piece)
+				if ".iso" not in piece:
+					print ("Compiling piece {}".format(piece))
+					with open(piece_path, "r") as piece_file:
+						output_file.write(piece_file.read())
+
+				if not preserve_tmp:
+					os.remove(piece_path)
+			if not preserve_tmp:
+				os.rmdir(self.temporary_download_location)
+		print ("Finished compiling file")
+
+	"""
 	def main_control_loop(self):
-		"""
-		Main control flow is as follows:
-			1. check if torrent is done
-				a. if so compile each file piece into it's parent file
-			2. check if we can re-announce and get more peers
-
-		:return:
-		"""
-		if not self.started:
-			self.start_torrent()
-			self.started = True
-
-		if self.is_complete:
-			pass
+		if self.activity_status == ACTIVITY_COMPLETED:
+			self.get_status()
+			self.compile_file_from_pieces(preserve_tmp=True) # TODO False for final status
 			# compile pieces into file
 			# update torrent status? (or do that in core)
+			self.stop_torrent()
 
-		if (time.time() - self.last_announce) > self.reannounce_limit:
-			pass
+		if self.activity_status == ACTIVITY_INITIALIZE_NEW or ACTIVITY_INITIALIZE_CONTINUE:
+			if not self.tracker_request_sent:
+				self.start_torrent()
+
+		if self.activity_status == ACTIVITY_DOWNLOADING:
+			self.update_completion_status()
+			self.get_status()
+
+			#self.reannounce_if_possible()
+
+		if self.activity_status == ACTIVITY_STOPPED:
+			print ("Stopping torrent")
+			self.stop_torrent()
+	"""
+
+# TODO
+# add algo for the end-game (when all pieces are assigned but not finished) to avoid bottlenecking on trying to get
+#	the last pieces from only a few peers.
+# TODO
+# tracker re-announce to get more peers/fresh peers
+# TODO
+# tracker scraping? (is that how we get more peers?)

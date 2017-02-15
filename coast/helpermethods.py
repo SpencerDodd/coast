@@ -9,9 +9,9 @@ def one_directory_back(current_directory):
 	rev_result = ''
 	result = ''
 
-	for c in rev_dir:
-		if c == '/':
-			rev_result += rev_dir[rev_dir.index(c):]
+	for index,c in enumerate(rev_dir):
+		if c == '/' and index != 0:
+			rev_result += rev_dir[index:]
 			result = rev_result[::-1]
 
 			return result

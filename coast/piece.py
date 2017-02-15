@@ -1,7 +1,7 @@
 import os
 import hashlib
 
-from constants import REQUEST_SIZE
+from constants import REQUEST_SIZE, DOWNLOAD_BAR_LEN
 from helpermethods import format_hex_output
 
 """
@@ -14,7 +14,7 @@ class Piece:
 		self.piece_length = piece_length
 		self.index = index
 		self.hash = hash
-		self.temp_location = os.path.join(download_location, "tmp", "{}.piece".format(str(self.index)))
+		self.temp_location = os.path.join(download_location, "tmp", "{}.piece".format(str(self.index).zfill(8)))
 		self.data = []
 		self.progress = 0.0
 		self.is_complete = False
@@ -97,7 +97,8 @@ class Piece:
 		return current_hash == self.hash
 
 	def progress_string(self):
-		return "{}% {}".format(str(self.progress).rjust(6), int(self.progress) * "|")
+		bars_to_render = int((self.progress / 100.0) * DOWNLOAD_BAR_LEN)
+		return u"{}% {}".format(str(self.progress).rjust(6), bars_to_render * u'\u2588')
 
 	def get_index(self):
 		return self.index

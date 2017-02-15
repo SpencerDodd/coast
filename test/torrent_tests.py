@@ -192,3 +192,7 @@ class TestTorrent(unittest.TestCase):
 		test_torrent.connected_peers += 1
 
 		#test_torrent.remove_active_peer()
+
+	def test_compile_file_from_pieces(self):
+		test_torrent.temporary_download_location = os.path.join(one_directory_back(os.getcwd()), "test/", test_torrent.torrent_name, "tmp/")
+		test_torrent.compile_file_from_pieces(preserve_tmp=True)
