@@ -1,6 +1,6 @@
 from constants import REQUEST_SIZE, PROTOCOL_STRING
 from helpermethods import convert_int_to_hex, convert_hex_to_int, format_hex_output
-import traceback
+import time
 """
 Representation of a handshake that is exchanged between the client and peers. Has two init
 methods. One for creating a client handshake message to send to peers, and the other to handle
@@ -181,6 +181,7 @@ class StreamProcessor:
 
 class HandshakeMessage:
 	def __init__(self, info_hash=None, peer_id=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.pstrlen = convert_int_to_hex(19, 1)
 			self.pstr = PROTOCOL_STRING
@@ -268,6 +269,7 @@ class HandshakeMessage:
 
 class KeepAliveMessage:
 	def __init__(self, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x00"
 			self.message_id = "\xff"
@@ -291,6 +293,7 @@ class KeepAliveMessage:
 
 class ChokeMessage:
 	def __init__(self, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x01"
 			self.message_id = "\x00"
@@ -331,6 +334,7 @@ class ChokeMessage:
 
 class UnchokeMessage:
 	def __init__(self, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x01"
 			self.message_id = "\x01"
@@ -371,6 +375,7 @@ class UnchokeMessage:
 
 class InterestedMessage:
 	def __init__(self, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x01"
 			self.message_id = "\x02"
@@ -411,6 +416,7 @@ class InterestedMessage:
 
 class NotInterestedMessage:
 	def __init__(self, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x01"
 			self.message_id = "\x03"
@@ -451,6 +457,7 @@ class NotInterestedMessage:
 
 class HaveMessage:
 	def __init__(self, piece_index=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x05"
 			self.message_id = "\x04"
@@ -497,6 +504,7 @@ class HaveMessage:
 
 class BitfieldMessage:
 	def __init__(self, bitfield=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = convert_int_to_hex(1+len(bitfield), 4)
 			self.message_id = "\x05"
@@ -533,6 +541,7 @@ class BitfieldMessage:
 
 class RequestMessage:
 	def __init__(self, index=None, begin=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x0d"
 			self.message_id = "\x06"
@@ -623,6 +632,7 @@ class RequestMessage:
 
 class PieceMessage:
 	def __init__(self, index=None, begin=None, block=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = convert_int_to_hex(9+REQUEST_SIZE, 4)
 			self.message_id = "\x07"
@@ -691,6 +701,7 @@ class PieceMessage:
 
 class CancelMessage:
 	def __init__(self, index=None, begin=None, length=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x0d"
 			self.message_id = "\x08"
@@ -728,6 +739,7 @@ class CancelMessage:
 
 class PortMessage:
 	def __init__(self, listen_port=None, data=None):
+		self.time_of_creation = time.time()
 		if data is None:
 			self.len_prefix = "\x00\x00\x00\x03"
 			self.message_id = "\x09"
@@ -764,4 +776,4 @@ class PortMessage:
 
 class EmptyMessage:
 	def __init__(self):
-		pass
+		self.time_of_creation = time.time()

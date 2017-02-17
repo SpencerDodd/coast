@@ -87,6 +87,12 @@ class Core:
 		print ("Adding torrent to core: {}".format(new_torrent.torrent_name))
 		self.active_torrents.append(new_torrent)
 
+	def stop_torrent(self):
+		self.active_torrents[self.displayed_torrent].stop_torrent()
+
+	def resume_torrent(self):
+		self.active_torrents[self.displayed_torrent].resume_torrent()
+
 	# TODO
 	def add_torrent_from_magnet(self):
 		pass
@@ -94,16 +100,19 @@ class Core:
 	def control_torrents(self):
 		for torrent in self.active_torrents:
 			if torrent.activity_status == ACTIVITY_COMPLETED:
+				print ("Torrent is complete")
 				sys.stdout.flush()
 				print (torrent.get_status(display_status=False))
 				torrent.compile_file_from_pieces(preserve_tmp=DEBUG)
 				torrent.stop_torrent()
 
 			if torrent.activity_status == ACTIVITY_INITIALIZE_NEW or ACTIVITY_INITIALIZE_CONTINUE:
+				print ("Initializing Torrent")
 				if not torrent.tracker_request_sent:
 					torrent.start_torrent()
 
 			if torrent.activity_status == ACTIVITY_DOWNLOADING:
+				print ("Torrent Downloading")
 				torrent.update_completion_status()
 				# torrent.reannounce_if_possible
 
@@ -133,7 +142,7 @@ class Core:
 
 	def run_gui(self):
 		root = Tk()
-		root.geometry("700x570+{}+{}".format(NEW_WINDOW_X, NEW_WINDOW_Y))
+		root.geometry("700x375+{}+{}".format(NEW_WINDOW_X, NEW_WINDOW_Y))
 		#root.attributes("-topmost", True)
 		gui = GUI(root, self)
 		gui.mainloop()

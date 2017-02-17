@@ -11,7 +11,7 @@ from twisted.internet import reactor, task
 
 from constants import MAX_PEERS, ERROR_BYTESTRING_CHUNKSIZE, DEBUG, \
 	ACTIVITY_INITIALIZE_NEW, ACTIVITY_INITIALIZE_CONTINUE, ACTIVITY_DOWNLOADING, ACTIVITY_STOPPED, ACTIVITY_COMPLETED, \
-	RESPONSE_TIMEOUT
+	RESPONSE_TIMEOUT, DOWNLOAD_SPEED_CALCULATION_WINDOW, REQUEST_SIZE
 from peer import Peer
 from piece import Piece
 from messages import HandshakeMessage
@@ -386,10 +386,26 @@ class Torrent:
 		reactor.run(installSignalHandlers=False)
 
 	def stop_torrent(self):
-		""" Stops the torrent by stopping the twisted reactor"""
-		print ("Stopping torrent: {}".format(self.torrent_name))
-		reactor.stop()
+		"""
+		Stops the torrent
 
+		Stops the reactor
+		Removes the active
+		Changes activity state
+		"""
+		# TODO Torrent is still downloading when stopped (around half normal speed)
+		# TODO lots of 'remove active peer' errors after a stop-start cycleAnti
+		print ("Stopping torrent: {}".format(self.torrent_name))
+		self.activity_status = ACTIVITY_STOPPED
+		self.connected_peers = 0
+		self.active_peers = []
+		self.active_peer_indices = []
+		self.assigned_pieces = []
+
+	def resume_torrent(self):
+		print ("Resuming torrent: {}".format(self.torrent_name))
+		self.activity_status = ACTIVITY_DOWNLOADING
+		self.connect_to_peers()
 
 	def get_progress(self):
 		pieces_finished = self.bitfield.count(1)
@@ -559,6 +575,20 @@ class Torrent:
 			if not preserve_tmp:
 				os.rmdir(self.temporary_download_location)
 		print ("Finished compiling file")
+
+	def get_current_download_speed(self):
+		"""
+		Gets the current download speed of the torrent
+		:return: speed in kb/s
+		"""
+		total_pieces = 0
+		for peer in self.active_peers:
+			total_pieces += peer.get_messages_in_window(DOWNLOAD_SPEED_CALCULATION_WINDOW)
+
+		kbps = (float(total_pieces) / DOWNLOAD_SPEED_CALCULATION_WINDOW) * (REQUEST_SIZE / 1024)
+
+		return kbps
+
 
 	"""
 	def main_control_loop(self):

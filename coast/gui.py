@@ -17,6 +17,7 @@ class GUI(Frame):
 		self.new_magnet_link = ""
 		self.new_torrent_file_path = ""
 		self.percent_complete = StringVar(self)
+		self.current_download_speed = StringVar(self)
 
 		self.initUI()
 
@@ -28,6 +29,7 @@ class GUI(Frame):
 
 		self.add_torrent_input()
 		self.add_torrent_list()
+		self.add_control_buttons()
 		self.add_progress_frame()
 
 		self.update_progress()
@@ -58,18 +60,45 @@ class GUI(Frame):
 								listbox.curselection()))
 		list_browser.pack(side=RIGHT, anchor=E, padx=5, pady=5)
 
+	def add_control_buttons(self):
+
+		control_button_frame = Frame(self)
+		control_button_frame.pack(fill=X)
+
+		stop_button = Button(control_button_frame, text="Stop", command=self.stop_torrent)
+		stop_button.pack(side=LEFT, anchor=E, padx=5, pady=5)
+
+		resume_button = Button(control_button_frame, text="Resume", command=self.resume_torrent)
+		resume_button.pack(side=LEFT, anchor=E, padx=5, pady=5)
+
 	def add_progress_frame(self):
 		progress_frame = Frame(self)
 		progress_frame.pack(fill=X, expand=True)
 
 		total_progress_bar = Progressbar(progress_frame, orient='horizontal', mode='determinate')
 		total_progress_bar['variable'] = self.percent_complete
-		total_progress_bar.pack(expand=True, fill=BOTH, side=TOP)
+		total_progress_bar.pack(fill=BOTH, side=TOP)
 
 		percent_complete_sign = Label(progress_frame, text="%", width=2)
 		percent_complete_sign.pack(side=RIGHT, padx=5, pady=5)
 		percent_complete_label = Label(progress_frame, textvariable=self.percent_complete, width=8)
 		percent_complete_label.pack(side=RIGHT, padx=5, pady=5)
+
+		speed_sign = Label(progress_frame, text="kb/s", width=4)
+		speed_sign.pack(side=RIGHT, padx=5, pady=5)
+
+		speed_value = Label(progress_frame, textvariable=self.current_download_speed, width=6)
+		speed_value.pack(side=RIGHT, padx=5, pady=5)
+
+	def stop_torrent(self):
+		self.core.stop_torrent()
+
+	def resume_torrent(self):
+		self.core.resume_torrent()
+
+	def add_peer_progress_frame(self):
+		peer_frame = Frame(self)
+		peer_frame.pack(fill=X, expand=True)
 
 	def refresh_window(self):
 		self.destroy_all_widgets()
@@ -80,15 +109,17 @@ class GUI(Frame):
 			widget.destroy()
 
 	def view_torrent_callback(self, new_display_torrent_index):
-		self.core.displayed_torrent = new_display_torrent_index
+		self.core.displayed_torrent = int(new_display_torrent_index)
 		self.refresh_window()
 
 	def update_progress(self):
 		if len(self.core.active_torrents) > 0:
 			self.percent_complete.set(self.core.active_torrents[self.core.displayed_torrent].get_progress())
+			self.current_download_speed.set(self.core.active_torrents[self.core.displayed_torrent].get_current_download_speed())
 			self.after(50, self.update_progress)
 		else:
 			self.percent_complete.set(0)
+			self.current_download_speed.set(0)
 			self.after(50, self.update_progress)
 
 	def get_torrent_file(self):
@@ -108,25 +139,22 @@ class GUI(Frame):
 
 	def add_torrent_callback(self):
 		add_torrent_window = Toplevel(self)
-		add_torrent_window.geometry("500x100+{}+{}".format(NEW_WINDOW_X, NEW_WINDOW_Y))
+		add_torrent_window.geometry("500x200+{}+{}".format(NEW_WINDOW_X, NEW_WINDOW_Y))
 		add_torrent_label = Label(add_torrent_window, text="Add Torrent")
-		add_torrent_label.pack(side="top", fill="both", expand=True, padx=5, pady=5)
+		add_torrent_label.pack(side=TOP, fill=X, padx=5, pady=5)
 
-		"""
+		magnet_label = Label(add_torrent_window, text="Magnet Link:")
+		magnet_label.pack(side=TOP, fill=X, padx=5, pady=5)
+
 		magnet_entry = Entry(add_torrent_window)
-		magnet_entry.pack(fill=X, side=LEFT, anchor=W, padx=5, expand=True)
+		magnet_entry.pack(fill=X, side=TOP, anchor=W, padx=5, expand=True)
 		magnet_entry.delete(0, "end")
 		magnet_entry.insert(0, self.new_magnet_link)
-		"""
 
-		torrent_entry = Entry(add_torrent_window)
-		torrent_entry.pack(fill=X, side=LEFT, anchor=W, padx=5, expand=True)
-		torrent_entry.delete(0, "end")
-		torrent_entry.insert(0, self.new_torrent_file_path)
 
 		torrent_file_selection_button = Button(add_torrent_window, text="From File", command=self.get_torrent_file)
-		torrent_file_selection_button.pack(fill=X, side=LEFT, anchor=W, padx=5, pady=5)
+		torrent_file_selection_button.pack(fill=X, side=TOP, anchor=W, padx=5, pady=5)
 
 		add_torrent_button = Button(add_torrent_window, text="Add Torrent",command=self.add_torrent)
-		add_torrent_button.pack(side="bottom")
+		add_torrent_button.pack(side=BOTTOM)
 

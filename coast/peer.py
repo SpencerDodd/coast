@@ -273,6 +273,21 @@ class Peer:
 	def set_piece(self, piece):
 		self.current_piece = piece
 
+	def get_messages_in_window(self, window_in_seconds):
+		"""
+
+		:param window_in_seconds: number of seconds in the past to parse messages from
+		:return: number of piece messages in the window
+		"""
+		current_time = time.time()
+		pieces = 0
+		for message in self.received_message_buffer:
+			if current_time - message.time_of_creation <= 5 and message.get_message_id() == 7:
+				pieces += 1
+
+		return pieces
+
+
 	"""
 	///////////////////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	///////////////////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
